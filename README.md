@@ -12,7 +12,8 @@ I've only just started this project, so the code is rough, tests aren't done and
 
 ## Installation
 
-```# Installing master version
+Installing master version:
+```bash
 $ pip install \
     git+https://github.com/evanjd/python-logi-circle
 ```
@@ -47,7 +48,7 @@ PyPi package soon.
 
 As this project is still in its early days, expect breaking changes. But here's a quick example:
 
-```
+```python
 from logi_circle import Logi
 
 logi_api = Logi('my@email.com', 'my-password')
