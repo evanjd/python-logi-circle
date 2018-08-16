@@ -27,14 +27,14 @@ class Activity(object):
         raw_end_time = activity['endTime']
         raw_duration = activity['playbackDuration']
 
-        self._attrs['start_time'] = datetime.strptime(
+        self._attrs['start_time_utc'] = datetime.strptime(
             raw_start_time, ISO8601_FORMAT_MASK)
-        self._attrs['end_time'] = datetime.strptime(
+        self._attrs['end_time_utc'] = datetime.strptime(
             raw_end_time, ISO8601_FORMAT_MASK)
 
-        self._attrs['start_time_local'] = self._attrs['start_time'].replace(
+        self._attrs['start_time'] = self._attrs['start_time_utc'].replace(
             tzinfo=pytz.utc).astimezone(self._local_tz)
-        self._attrs['end_time_local'] = self._attrs['end_time'].replace(
+        self._attrs['end_time'] = self._attrs['end_time_utc'].replace(
             tzinfo=pytz.utc).astimezone(self._local_tz)
 
         self._attrs['duration'] = timedelta(milliseconds=raw_duration)
@@ -54,7 +54,7 @@ class Activity(object):
         if filename:
             with open(filename, 'wb+') as recording:
                 recording.write(req.content)
-                return True
+                return
         else:
             return req.content
 
@@ -65,23 +65,23 @@ class Activity(object):
 
     @property
     def start_time(self):
-        """Return start time as datetime object."""
+        """Return start time as datetime object, local to the camera's timezone."""
         return self._attrs['start_time']
 
     @property
     def end_time(self):
-        """Return start time as datetime object."""
+        """Return end time as datetime object, local to the camera's timezone."""
         return self._attrs['end_time']
 
     @property
-    def start_time_local(self):
-        """Return start time as datetime object, local to the camera's timezone."""
-        return self._attrs['start_time_local']
+    def start_time_utc(self):
+        """Return start time as datetime object in the UTC timezone."""
+        return self._attrs['start_time_utc']
 
     @property
-    def end_time_local(self):
-        """Return end time as datetime object, local to the camera's timezone."""
-        return self._attrs['end_time_local']
+    def end_time_utc(self):
+        """Return end time as datetime object in the UTC timezone."""
+        return self._attrs['end_time_utc']
 
     @property
     def duration(self):

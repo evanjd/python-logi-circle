@@ -51,10 +51,14 @@ class Logi(object):
 
         _LOGGER.debug("POSTing login payload to %s", url)
 
-        sys.exit()
-
         try:
             req = self.session.post((url), json=login_payload)
+            # Handle failed authentication due to incorrect user/pass
+            if req.status_code == 401:
+                raise ValueError(
+                    'Username or password provided is incorrect. Could not authenticate.')
+
+            # Throw error if authentication failed for any reason (server outage, etc)
             req.raise_for_status()
 
             self.is_connected = True
@@ -84,6 +88,11 @@ class Logi(object):
             if (self.cache['account'] is None) or (self.cache['cookie'] is None):
                 # Cache is missing one or required values.
                 _LOGGER.warn('Cache appears corrupt. Re-authenticating.')
+                self._authenticate()
+            elif (self.cache['account'] != self.username):
+                # Cache does not apply to this user.
+                _LOGGER.debug(
+                    'Cached credentials are for a different user. Re-authenticating.')
                 self._authenticate()
             else:
                 # Add cookie to session

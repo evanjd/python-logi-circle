@@ -12,7 +12,8 @@ I've only just started this project, so the code is rough, tests aren't done and
 
 ## Installation
 
-Installing master version:
+#### Installing development master
+
 ```bash
 $ pip install \
     git+https://github.com/evanjd/python-logi-circle
@@ -34,10 +35,10 @@ PyPi package soon.
   - Temperature (if supported by your device)
   - Relative humidity % (if supported by your device)
 - Download latest activity as MP4, either downloaded to a file or served to your application in a Requests object
+- Query and filter the activity history
 
 ## Features planned
 
-- Query activity history (ASAP)
 - Download still image from live feed (ASAP)
 - Poll method on Camera object to update state from server (ASAP)
 - Motion alerts (eventually)
@@ -46,30 +47,69 @@ PyPi package soon.
 
 ## Usage example
 
-As this project is still in its early days, expect breaking changes. But here's a quick example:
+As this project is still in its early days, expect breaking changes!
+
+#### Authenticate:
 
 ```python
 from logi_circle import Logi
 
 logi_api = Logi('my@email.com', 'my-password')
+```
 
-# Loop through all available cameras
+#### Download latest activity for all cameras:
+
+```python
 for camera in logi_api.cameras:
-    print('Camera %s has %s battery remaining.' % (
-        camera.name, camera.battery_level))
+    camera.last_activity.download('%s-last-activity.mp4' % (camera.name))
+```
 
+#### Download last 24 hours activity for the 1st camera (limited to 100):
+
+```python
+from datetime import datetime, timedelta
+
+my_camera = logi_api.cameras[0]
+activities = my_camera.query_activity_history(date_filter=datetime.now() - timedelta(hours=24), date_operator='>', limit=100)
+for activity in activities:
+    file_name = '%s - %s.mp4' % (my_camera.name, activity.start_time.isoformat())
+    activity.download(file_name)
+```
+
+#### Download last 6 hours activity for the 1st camera where duration is greater than a minute and relevance level is >= 1
+
+```python
+from datetime import datetime, timedelta
+
+my_camera = logi_api.cameras[0]
+activities = my_camera.query_activity_history(date_filter=datetime.now() - timedelta(hours=6),
+        property_filter='playbackDuration > 60000 AND relevanceLevel >= 1',
+        date_operator='>',
+        limit=100)
+for activity in activities:
+    file_name = '%s - %s.mp4' % (my_camera.name, activity.start_time.isoformat())
+    activity.download(file_name)
+```
+
+#### Play with camera properties
+
+```python
+for camera in logi_api.cameras:
     last_activity = camera.last_activity
-    print('Camera %s last activity was at %s and lasted for %s seconds.' % (
-        camera.name, last_activity.start_time_local, last_activity.duration.total_seconds()))
-
-    # Download activity
-    last_activity.download('%s-last-activity.mp4' % (camera.name))
+    print('%s: %s' % (camera.name, ('is charging' if camera.is_charging else 'is not charging')))
+    print('%s: %s%% battery remaining' % (camera.name, camera.battery_level))
+    print('%s: Model number is %s' % (camera.name, camera.model))
+    print('%s: Signal strength is %s%% (%s)' % (camera.name, camera.signal_strength_percentage, camera.signal_strength_category))
+    print('%s: last activity was at %s and lasted for %s seconds.' % (
+        camera.name, last_activity.start_time.isoformat(), last_activity.duration.total_seconds()))
 ```
 
 ## Release History
 
 - 0.0.1
   - Initial commit
+- 0.0.2
+  - Added support for querying activity history
 
 ## Meta
 
