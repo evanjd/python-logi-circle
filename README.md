@@ -25,6 +25,7 @@ PyPi package soon.
 
 - Camera properties exposed:
   - ID
+  - Node ID
   - Name
   - Timezone
   - Connected status (is it powered and in range)
@@ -32,17 +33,24 @@ PyPi package soon.
   - Charging status
   - Model
   - Signal strength %
+  - Last activity
+  - Live image (as JPEG)
   - Temperature (if supported by your device)
   - Relative humidity % (if supported by your device)
-- Download latest activity as MP4, either downloaded to a file or served to your application in a Requests object
-- Query and filter the activity history
+- Activity properties exposed:
+  - Start time (local or UTC)
+  - End time (local or UTC)
+  - Duration
+  - Relevance level (indicating whether people/objects were detected)
+- Query/filter the activity history by start time and/or activity properties (duration, relevance)
+- Download any activity video to disk or serve to your application as a Requests object
+- Download still images from camera and serve to your application as a raw bytes object
 
 ## Features planned
 
-- Download still image from live feed (ASAP)
-- Poll method on Camera object to update state from server (ASAP)
+- Poll method on Camera object to update state from server (next couple days)
+- Live streaming support (soon)
 - Motion alerts (eventually)
-- Live streaming support (eventually)
 - Logi Circle CLI (eventually)
 
 ## Usage example
@@ -55,6 +63,16 @@ As this project is still in its early days, expect breaking changes!
 from logi_circle import Logi
 
 logi_api = Logi('my@email.com', 'my-password')
+```
+
+#### Grab latest still image for each camera:
+
+```python
+for camera in logi_api.cameras:
+    img = camera.snapshot_image
+    filename = '%s.jpg' % (camera.name)
+    with open(filename, 'wb+') as file:
+        file.write(img)
 ```
 
 #### Download latest activity for all cameras:
@@ -110,6 +128,8 @@ for camera in logi_api.cameras:
   - Initial commit
 - 0.0.2
   - Added support for querying activity history
+- 0.0.3
+  - Added support for retrieving the latest still image for a given camera
 
 ## Meta
 

@@ -27,9 +27,14 @@ COOKIE_NAME = 'prod_session'
 ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%S%z'
 
 # API endpoints
-API_URI = 'https://video.logi.com/api'
+PROTOCOL = 'https'
+API_URI = '%s://video.logi.com/api' % (PROTOCOL)
 AUTH_ENDPOINT = '/accounts/authorization'
 CAMERAS_ENDPOINT = '/accessories'
+IMAGES_ENDPOINT = '/image'
 ACTIVITIES_ENDPOINT = '/activities'
 ACCESSORIES_ENDPOINT = '/accessories'
 VALIDATE_ENDPOINT = '/accounts/self'
+
+# Misc
+JPEG_MIME_TYPE = 'image/jpeg'

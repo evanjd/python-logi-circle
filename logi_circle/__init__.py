@@ -123,6 +123,8 @@ class Logi(object):
               request_body=None,
               relative_to_api_root=True,
               raw=False,
+              stream=False,
+              headers=HEADERS,
               _reattempt=False):
         """Query data from the Logi Circle API."""
         resolved_url = (API_URI + url if relative_to_api_root else url)
@@ -131,13 +133,13 @@ class Logi(object):
         try:
             if method == 'GET':
                 req = self.session.get(
-                    (resolved_url), params=urlencode(params))
+                    (resolved_url), stream=stream, headers=headers, params=urlencode(params))
             elif method == 'PUT':
                 req = self.session.put(
-                    (resolved_url), params=urlencode(params), json=request_body)
+                    (resolved_url), stream=stream, headers=headers, params=urlencode(params), json=request_body)
             elif method == 'POST':
                 req = self.session.post(
-                    (resolved_url), params=urlencode(params), json=request_body)
+                    (resolved_url), stream=stream, headers=headers, params=urlencode(params), json=request_body)
 
             _LOGGER.debug("%s returned %s", resolved_url, req.status_code)
 
@@ -153,7 +155,7 @@ class Logi(object):
                 req.raise_for_status()
 
             self.is_connected = False
-            return self.query(resolved_url, method, params, request_body, relative_to_api_root, raw, True)
+            return self.query(url=url, method=method, params=params, request_body=request_body, relative_to_api_root=relative_to_api_root, raw=raw, stream=stream, headers=headers, _reattempt=True)
 
         if raw:
             return req

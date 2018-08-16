@@ -3,10 +3,9 @@
 import logging
 import pytz
 from datetime import datetime
-from logi_circle.const import (ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT)
+from logi_circle.const import (
+    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_MIME_TYPE)
 from logi_circle.activity import Activity
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class Camera(object):
@@ -27,6 +26,7 @@ class Camera(object):
             self._attrs['id'] = camera['accessoryId']
             self._attrs['name'] = camera['name']
             self._attrs['is_connected'] = camera['isConnected']
+            self._attrs['node_id'] = camera['nodeId']
             config = camera['configuration']
         except ValueError:
             _LOGGER.error(
@@ -116,9 +116,35 @@ class Camera(object):
             return None
 
     @property
+    def snapshot_url(self):
+        """Returns the URL that provides a near realtime JPEG snapshot of what the camera sees"""
+        url = '%s://%s/api%s/%s%s' % (PROTOCOL, self.node_id,
+                                      ACCESSORIES_ENDPOINT, self.id, IMAGES_ENDPOINT)
+        return url
+
+    @property
+    def snapshot_image(self):
+        """Returns a near realtime JPEG snapshot for this camera"""
+        url = self.snapshot_url
+
+        image = self._logi.query(
+            url=url, relative_to_api_root=False, stream=True, raw=True)
+
+        if (image.headers['content-type'] == JPEG_MIME_TYPE):
+            return image.content
+        else:
+            raise AssertionError('Expected content-type %s, got %s when retrieving still image for camera %s' %
+                                 (JPEG_MIME_TYPE, image.headers['content-type'], self.name))
+
+    @property
     def id(self):
         """Return device ID."""
         return self._attrs.get('id')
+
+    @property
+    def node_id(self):
+        """Return device node ID."""
+        return self._attrs.get('node_id')
 
     @property
     def name(self):
