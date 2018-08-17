@@ -7,10 +7,12 @@ except ImportError:
 
 import sys
 import logging
-import requests
 import json
+import requests
+import aiohttp
 
-from logi_circle.utils import _exists_cache, _save_cache, _read_cache
+
+from logi_circle.utils import _get_session_cookie, _exists_cache, _save_cache, _read_cache
 
 from logi_circle.const import (
     API_URI, AUTH_ENDPOINT, CACHE_ATTRS, CACHE_FILE, CAMERAS_ENDPOINT, COOKIE_NAME, VALIDATE_ENDPOINT, HEADERS)
@@ -23,90 +25,104 @@ _LOGGER = logging.getLogger(__name__)
 class Logi(object):
     """A Python abstraction object to Logi Circle cameras."""
 
-    def __init__(self, username, password, debug=True, reuse_session=True, cache_file=CACHE_FILE):
+    def __init__(self, username, password, reuse_session=True, cache_file=CACHE_FILE):
         self.is_connected = None
         self.params = None
-
-        self.debug = debug
         self.username = username
         self.password = password
-        self.session = requests.Session()
 
-        if debug:
-            _LOGGER.setLevel(logging.DEBUG)
-
-        self.cache = CACHE_ATTRS
-        self.cache_file = cache_file
+        self._session = None
+        self._cache = CACHE_ATTRS
+        self._cache_file = cache_file
         self._reuse_session = reuse_session
 
+    async def login(self):
+        """Create a session with the Logi Circle API"""
         if self._reuse_session:
-            self._restore_cached_session()
+            try:
+                await self._restore_cached_session()
+            except AssertionError:
+                # Fall back to authentication if restoring the cached session fails.
+                await self._authenticate()
         else:
-            self._authenticate()
+            await self._authenticate()
 
-    def _authenticate(self):
+    async def logout(self):
+        """Close the session with the Logi Circle API"""
+        if isinstance(self._session, aiohttp.ClientSession):
+            await self._session.close()
+            self._session = None
+        else:
+            raise AssertionError('No session active.')
+
+    async def _authenticate(self):
         """Authenticate user with the Logi Circle API."""
         url = API_URI + AUTH_ENDPOINT
         login_payload = {'email': self.username, 'password': self.password}
 
         _LOGGER.debug("POSTing login payload to %s", url)
 
-        try:
-            req = self.session.post((url), json=login_payload)
-            # Handle failed authentication due to incorrect user/pass
-            if req.status_code == 401:
-                raise ValueError(
-                    'Username or password provided is incorrect. Could not authenticate.')
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=login_payload) as req:
+                # Handle failed authentication due to incorrect user/pass
+                if req.status == 401:
+                    raise ValueError(
+                        'Username or password provided is incorrect. Could not authenticate.')
 
-            # Throw error if authentication failed for any reason (server outage, etc)
-            req.raise_for_status()
+                # Throw error if authentication failed for any reason (connection issues, outage, etc)
+                req.raise_for_status()
 
-            self.is_connected = True
-            _LOGGER.info("Logged in.")
-            self.params = {
-                'auth_cookie': req.cookies[COOKIE_NAME]}
+                self._session = session
+                self.is_connected = True
+                _LOGGER.info("Logged in as %s.", self.username)
 
-            # Cache account and cookie for later use if reuse_session is true
-            if self._reuse_session:
-                cookie = req.cookies[COOKIE_NAME]
-                _LOGGER.debug("Persisting session cookie %s", cookie)
-                self.cache['account'] = self.username
-                self.cache['cookie'] = cookie
-                _save_cache(self.cache, self.cache_file)
+                # Cache account and cookie for later use if reuse_session is true
+                if self._reuse_session:
+                    cookie = _get_session_cookie(session.cookie_jar)
+                    _LOGGER.debug("Persisting session cookie %s", cookie)
+                    self._cache['account'] = self.username
+                    self._cache['cookie'] = cookie.value
+                    _save_cache(self._cache, self._cache_file)
 
-        except requests.exceptions.RequestException as err_msg:
-            _LOGGER.error("Error: %s", err_msg)
-            raise
-
-    def _restore_cached_session(self):
+    async def _restore_cached_session(self):
         """Retrieved cached cookie and validate session."""
-        if _exists_cache(self.cache_file):
+        if _exists_cache(self._cache_file):
             _LOGGER.debug("Restoring cookie from cache.")
 
-            self.cache = _read_cache(self.cache_file)
+            self._cache = _read_cache(self._cache_file)
 
-            if (self.cache['account'] is None) or (self.cache['cookie'] is None):
+            if (self._cache['account'] is None) or (self._cache['cookie'] is None):
                 # Cache is missing one or required values.
                 _LOGGER.warn('Cache appears corrupt. Re-authenticating.')
-                self._authenticate()
-            elif (self.cache['account'] != self.username):
+                raise AssertionError('Cache incomplete.')
+            elif (self._cache['account'] != self.username):
                 # Cache does not apply to this user.
                 _LOGGER.debug(
                     'Cached credentials are for a different user. Re-authenticating.')
-                self._authenticate()
+                raise AssertionError('Cache does not apply to %s.')
             else:
-                # Add cookie to session
-                self.session.cookies.set(COOKIE_NAME, self.cache['cookie'])
-                self._validate_session()
+                cookies = {COOKIE_NAME: self._cache['cookie']}
+
+                async with aiohttp.ClientSession(cookies=cookies) as session:
+                    async with session.get(API_URI + VALIDATE_ENDPOINT) as req:
+                        if req.status >= 300:
+                            # Cookie has probably expired, reauthenticate.
+                            session.close()
+                            raise AssertionError(
+                                'Could not authenticate with cached cookie, likely gone stale.')
+                        else:
+                            _LOGGER.info(
+                                "Restored cached session for %s.", self.username)
+                            self._session = session
 
         else:
-            self._authenticate()
+            raise AssertionError('Cache not found.')
 
     def _validate_session(self):
         """Perform a throwaway request to validate the session is still active, and attempt reauthentication if the session has in fact expired."""
         url = API_URI + VALIDATE_ENDPOINT
 
-        req = self.session.get((url))
+        req = self._session.get((url))
         if req.status_code != 200:
             # Cookie has expired, reauthenticate.
             _LOGGER.debug("Cookie has expired, re-authenticating.")
@@ -132,13 +148,13 @@ class Logi(object):
 
         try:
             if method == 'GET':
-                req = self.session.get(
+                req = self._session.get(
                     (resolved_url), stream=stream, headers=headers, params=urlencode(params))
             elif method == 'PUT':
-                req = self.session.put(
+                req = self._session.put(
                     (resolved_url), stream=stream, headers=headers, params=urlencode(params), json=request_body)
             elif method == 'POST':
-                req = self.session.post(
+                req = self._session.post(
                     (resolved_url), stream=stream, headers=headers, params=urlencode(params), json=request_body)
 
             _LOGGER.debug("%s returned %s", resolved_url, req.status_code)

@@ -1,12 +1,20 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import os
-from logi_circle.const import CACHE_ATTRS
+from logi_circle.const import (CACHE_ATTRS, COOKIE_NAME)
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+
+def _get_session_cookie(cookie_jar):
+    """Iterates through the session's AbstractCookieJar and returns the cookie relevant to Logi API sessions"""
+    for cookie in cookie_jar:
+        if cookie.key == COOKIE_NAME:
+            return cookie
+    raise AssertionError('No session cookie found in cookie_jar.')
 
 
 def _clean_cache(filename):
