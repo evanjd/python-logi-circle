@@ -4,8 +4,9 @@
 from datetime import datetime, timedelta
 import logging
 import pytz
-from logi_circle.const import (ISO8601_FORMAT_MASK)
-from logi_circle.utils import _stream_to_file
+from .const import (ISO8601_FORMAT_MASK, VIDEO_CONTENT_TYPE)
+from .utils import _stream_to_file
+from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,14 +53,22 @@ class Activity(object):
         url = self.download_url
 
         video = await self._logi._fetch(url=url, method='GET', raw=True)
-        print(video.content_type)
 
-        if filename:
-            # Stream to file
-            await _stream_to_file(video.content, filename)
+        if video.content_type == VIDEO_CONTENT_TYPE:
+            # Got a video!
+            if filename:
+                # Stream to file
+                await _stream_to_file(video.content, filename)
+                video.close()
+            else:
+                # Return binary object
+                content = await video.read()
+                video.close()
+                return content
         else:
-            # Return binary object
-            return await video.read()
+            _LOGGER.error('Expected content-type %s, got %s when retrieving activity video.',
+                          VIDEO_CONTENT_TYPE, video.content_type)
+            raise UnexpectedContentType()
 
     @property
     def activity_id(self):

@@ -7,12 +7,11 @@ import json
 import aiohttp
 
 
-from logi_circle.utils import _get_session_cookie, _handle_response, _exists_cache, _save_cache, _read_cache
-
-from logi_circle.const import (
+from .utils import _get_session_cookie, _handle_response, _exists_cache, _save_cache, _read_cache, _clean_cache
+from .const import (
     API_URI, AUTH_ENDPOINT, CACHE_ATTRS, CACHE_FILE, CAMERAS_ENDPOINT, COOKIE_NAME, VALIDATE_ENDPOINT, HEADERS)
-
-from logi_circle.camera import Camera
+from .camera import Camera
+from .exception import BadSession, NoSession, BadCache
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ class Logi(object):
             try:
                 # Restore cached cookie and validate.
                 await self._restore_cached_session()
-            except AssertionError:
+            except BadCache:
                 # Fall back to authentication if restoring the cached session fails.
                 await self._authenticate()
         else:
@@ -49,11 +48,12 @@ class Logi(object):
 
     async def logout(self):
         """Close the session with the Logi Circle API"""
+        _LOGGER.debug('Closing session for %s.', self.username)
         if isinstance(self._session, aiohttp.ClientSession):
             await self._session.close()
             self._session = None
         else:
-            raise AssertionError('No session active.')
+            raise NoSession()
 
     async def _authenticate(self):
         """Authenticate user with the Logi Circle API."""
@@ -63,7 +63,7 @@ class Logi(object):
         _LOGGER.debug("POSTing login payload to %s", url)
 
         session = aiohttp.ClientSession()
-        async with session.post(url, json=login_payload) as req:
+        async with session.post(url, json=login_payload, headers=HEADERS) as req:
             # Handle failed authentication due to incorrect user/pass
             if req.status == 401:
                 raise ValueError(
@@ -94,29 +94,27 @@ class Logi(object):
             if (self._cache['account'] is None) or (self._cache['cookie'] is None):
                 # Cache is missing one or required values.
                 _LOGGER.debug('Cache appears corrupt. Re-authenticating.')
-                raise AssertionError('Cache incomplete.')
+                raise BadCache()
             elif self._cache['account'] != self.username:
                 # Cache does not apply to this user.
                 _LOGGER.debug(
                     'Cached credentials are for a different user. Re-authenticating.')
-                raise AssertionError('Cache does not apply to %s.')
+                raise BadCache()
             else:
                 cookies = {COOKIE_NAME: self._cache['cookie']}
 
                 session = aiohttp.ClientSession(cookies=cookies)
-                async with session.get(API_URI + VALIDATE_ENDPOINT) as req:
+                async with session.get(API_URI + VALIDATE_ENDPOINT, headers=HEADERS) as req:
                     if req.status >= 300:
                         # Cookie has probably expired, reauthenticate.
-                        session.close()
-                        raise AssertionError(
-                            'Could not authenticate with cached cookie, likely gone stale.')
+                        raise BadCache()
                     else:
                         _LOGGER.info(
                             "Restored cached session for %s.", self.username)
                         self._session = session
 
         else:
-            raise AssertionError('Cache not found.')
+            raise BadCache()
 
     async def _fetch(self,
                      url,
@@ -138,11 +136,11 @@ class Logi(object):
 
         # Perform request
         if method == 'GET':
-            req = await self._session.get(resolved_url, params=params)
+            req = await self._session.get(resolved_url, headers=HEADERS, params=params)
         elif method == 'POST':
-            req = await self._session.post(resolved_url, params=params, json=request_body)
+            req = await self._session.post(resolved_url, headers=HEADERS, params=params, json=request_body)
         elif method == 'PUT':
-            req = await self._session.put(resolved_url, params=params, json=request_body)
+            req = await self._session.put(resolved_url, headers=HEADERS, params=params, json=request_body)
         else:
             raise ValueError('Method %s not supported.' % (method))
 
@@ -152,7 +150,7 @@ class Logi(object):
         # Handle response
         try:
             return await _handle_response(request=req, raw=raw)
-        except AssertionError:
+        except BadSession:
             if _reattempt:
                 # Welp, session still bad even after reauthenticating.
                 _LOGGER.error(

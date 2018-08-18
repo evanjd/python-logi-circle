@@ -59,7 +59,7 @@ PyPi package soon.
 
 As this project is still in its early days, expect breaking changes!
 
-#### Authenticate:
+#### Setup and authenticate:
 
 ```python
 import asyncio
@@ -95,23 +95,35 @@ loop.run_until_complete(get_latest_activity())
 loop.close()
 ```
 
-#### Download last 6 hours activity for the 1st camera (limited to 100):
+#### Download last 24 hours activity for the 1st camera (limited to 100, 5 at a time):
 
 ```python
 from datetime import datetime, timedelta
 
-async def get_last_six_hours():
-    my_camera = (await logi_api.cameras)[0]
-    activities = await my_camera.query_activity_history(date_filter=datetime.now() - timedelta(hours=6), date_operator='>', limit=100)
-    for activity in activities:
-        file_name = '%s - %s.mp4' % (my_camera.name,
+# Don't go nuts with parallelising downloads, you'll probably hit rate limits.
+semaphore = asyncio.Semaphore(5)
+
+async def download(camera, activity):
+    async with semaphore:
+        file_name = '%s - %s.mp4' % (camera.name,
                                      activity.start_time.isoformat())
         await activity.download(file_name)
-    await logi_api.logout()
+
+async def run():
+    my_camera = (await logi_api.cameras)[0]
+    activities = await my_camera.query_activity_history(date_filter=datetime.now() - timedelta(hours=24), date_operator='>', limit=100)
+    tasks = []
+
+    for activity in activities:
+        task = asyncio.ensure_future(download(my_camera, activity))
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
+    logi_api.logout()
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(get_last_six_hours())
-loop.close()
+future = asyncio.ensure_future(run())
+loop.run_until_complete(future)
 ```
 
 #### Turn off streaming for all cameras
@@ -128,7 +140,7 @@ async def disable_streaming_all():
     await logi_api.logout()
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(async def disable_streaming_all())
+loop.run_until_complete(disable_streaming_all())
 loop.close()
 ```
 
@@ -136,7 +148,7 @@ loop.close()
 
 ```python
 async def play_with_props():
-    for camera in logi_api.cameras:
+    for camera in await logi_api.cameras:
         last_activity = await camera.last_activity
         print('%s: %s' % (camera.name, ('is charging' if camera.is_charging else 'is not charging')))
         print('%s: %s%% battery remaining' % (camera.name, camera.battery_level))
@@ -147,7 +159,7 @@ async def play_with_props():
     await logi_api.logout()
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(async def play_with_props())
+loop.run_until_complete(play_with_props())
 loop.close()
 ```
 
@@ -163,7 +175,6 @@ loop.close()
   - Replaced requests with aiohttp
   - Added support for turning camera on & off
   - Added update() method to Camera object to refresh data from server
-  - Added pylint profile
 
 ## Meta
 

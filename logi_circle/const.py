@@ -5,7 +5,6 @@ import os
 
 # Requests and cached session properties
 HEADERS = {
-    'content-type': 'application/json; charset=UTF-8',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
@@ -13,7 +12,6 @@ HEADERS = {
     'Origin': 'https://circle.logi.com',
     'Accept': '*/*',
     'Referer': 'https://circle.logi.com/',
-    'Host': 'video.logi.com',
     'Pragma': 'no-cache'
 }
 CACHE_ATTRS = {'cookie': None, 'account': None}
@@ -37,4 +35,5 @@ ACCESSORIES_ENDPOINT = '/accessories'
 VALIDATE_ENDPOINT = '/accounts/self'
 
 # Misc
-JPEG_MIME_TYPE = 'image/jpeg'
+JPEG_CONTENT_TYPE = 'image/jpeg'
+VIDEO_CONTENT_TYPE = 'application/octet-stream'

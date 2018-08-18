@@ -4,10 +4,11 @@
 import logging
 from datetime import datetime
 import pytz
-from logi_circle.const import (
-    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_MIME_TYPE)
-from logi_circle.activity import Activity
-from logi_circle.utils import _stream_to_file
+from .const import (
+    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE)
+from .activity import Activity
+from .utils import _stream_to_file
+from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,18 +153,22 @@ class Camera(object):
         image = await self._logi._fetch(
             url=url, relative_to_api_root=False, raw=True)
 
-        if image.content_type == JPEG_MIME_TYPE:
+        if image.content_type == JPEG_CONTENT_TYPE:
             # Got an image!
 
             if filename:
                 # Stream to file
                 await _stream_to_file(image.content, filename)
+                image.close()
             else:
                 # Return binary object
-                return await image.read()
+                content = await image.read()
+                image.close()
+                return content
         else:
-            raise AssertionError('Expected content-type %s, got %s when retrieving still image for camera %s' %
-                                 (JPEG_MIME_TYPE, image.content_type, self.name))
+            _LOGGER.error('Expected content-type %s, got %s when retrieving still image for camera %s',
+                          JPEG_CONTENT_TYPE, image.content_type, self.name)
+            raise UnexpectedContentType()
 
     async def set_power(self, status):
         """Disables streaming for this camera."""

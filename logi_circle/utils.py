@@ -3,12 +3,12 @@
 # vim:sw=4:ts=4:et:
 import os
 import logging
-from logi_circle.const import (CACHE_ATTRS, COOKIE_NAME)
-
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+from logi_circle.const import (CACHE_ATTRS, COOKIE_NAME)
+from .exception import BadSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,13 +18,13 @@ def _get_session_cookie(cookie_jar):
     for cookie in cookie_jar:
         if cookie.key == COOKIE_NAME:
             return cookie
-    raise AssertionError('No session cookie found in cookie_jar.')
+    raise BadSession()
 
 
 async def _handle_response(request, raw):
     if request.status == 401:
         # Session has likely expired. Re-authentiate.
-        raise AssertionError('Session expired.')
+        raise BadSession()
 
     # Throw unhandled error if request failed for any other reason
     request.raise_for_status()
@@ -32,7 +32,9 @@ async def _handle_response(request, raw):
     if raw:
         return request
     else:
-        return await request.json()
+        resp = await request.json()
+        request.close()
+        return resp
 
 
 async def _stream_to_file(stream, filename):
