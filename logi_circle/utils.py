@@ -1,12 +1,50 @@
+"""Utilities library shared by the Logi, Camera and Activity classes."""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import os
-from logi_circle.const import CACHE_ATTRS
-
+import logging
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+from logi_circle.const import (CACHE_ATTRS, COOKIE_NAME)
+from .exception import BadSession
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def _get_session_cookie(cookie_jar):
+    """Iterates through the session's AbstractCookieJar and returns the cookie relevant to Logi API sessions"""
+    for cookie in cookie_jar:
+        if cookie.key == COOKIE_NAME:
+            return cookie
+    raise BadSession()
+
+
+async def _handle_response(request, raw):
+    if request.status == 401:
+        # Session has likely expired. Re-authentiate.
+        raise BadSession()
+
+    # Throw unhandled error if request failed for any other reason
+    request.raise_for_status()
+
+    if raw:
+        return request
+    else:
+        resp = await request.json()
+        request.close()
+        return resp
+
+
+async def _stream_to_file(stream, filename):
+    """Stream aiohttp response to file"""
+    with open(filename, 'wb') as file_handle:
+        while True:
+            chunk = await stream.read(1024)
+            if not chunk:
+                break
+            file_handle.write(chunk)
 
 
 def _clean_cache(filename):

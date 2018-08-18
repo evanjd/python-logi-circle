@@ -1,0 +1,10 @@
+[MASTER]
+reports=no
+max-line-length=120
+good-names=id
+
+disable=
+  W0212 #
+
+[EXCEPTIONS]
+overgeneral-exceptions=Exception

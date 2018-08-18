@@ -1,11 +1,16 @@
+"""Camera class, representing a Logi Circle device"""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
-import pytz
 from datetime import datetime
-from logi_circle.const import (
-    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_MIME_TYPE)
-from logi_circle.activity import Activity
+import pytz
+from .const import (
+    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE)
+from .activity import Activity
+from .utils import _stream_to_file
+from .exception import UnexpectedContentType
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Camera(object):
@@ -34,6 +39,8 @@ class Camera(object):
             raise
 
         # Optional attributes
+        self._attrs['is_streaming'] = config.get(
+            'streamingMode', 'off') == 'on'
         self._attrs['timezone'] = config.get('timeZone', 'UTC')
         self._attrs['battery_level'] = config.get('batteryLevel', None)
         self._attrs['is_charging'] = config.get('batteryCharging', None)
@@ -41,14 +48,28 @@ class Camera(object):
         self._attrs['wifi_signal_strength'] = config.get(
             'wifiSignalStrength', None)
         self._attrs['firmware'] = config.get('firmwareVersion', None)
-        if (config.get('humidityIsAvailable', False)):
+        if config.get('humidityIsAvailable', False):
             self._attrs['humidity'] = config.get('humidity', None)
-        if (config.get('temperatureIsAvailable', False)):
+        else:
+            self._attrs['humidity'] = None
+        if config.get('temperatureIsAvailable', False):
             self._attrs['temperature'] = config.get('temperature', None)
+        else:
+            self._attrs['temperature'] = None
 
         self._local_tz = pytz.timezone(self._attrs['timezone'])
 
-    def query_activity_history(self, property_filter=None, date_filter=None, date_operator='<=', limit=100):
+    async def update(self):
+        """Poll API for changes to camera properties"""
+        _LOGGER.debug('Updating properties for camera %s', self.name)
+
+        url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
+        camera = await self._logi._fetch(
+            url=url, method='GET')
+
+        self._set_attributes(camera)
+
+    async def query_activity_history(self, property_filter=None, date_filter=None, date_operator='<=', limit=100):
         """Filter the activity history, returning Activity objects for any matching result."""
 
         if limit > 100:
@@ -83,7 +104,7 @@ class Camera(object):
 
         url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.id, ACTIVITIES_ENDPOINT)
 
-        raw_activitites = self._logi.query(
+        raw_activitites = await self._logi._fetch(
             url=url, method='POST', request_body=payload)
 
         activities = []
@@ -95,7 +116,7 @@ class Camera(object):
         return activities
 
     @property
-    def last_activity(self):
+    async def last_activity(self):
         """Returns the most recent activity as an Activity object."""
 
         payload = {
@@ -105,7 +126,7 @@ class Camera(object):
         }
         url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.id, ACTIVITIES_ENDPOINT)
 
-        raw_activity = self._logi.query(
+        raw_activity = await self._logi._fetch(
             url=url, method='POST', request_body=payload)
 
         try:
@@ -122,19 +143,52 @@ class Camera(object):
                                       ACCESSORIES_ENDPOINT, self.id, IMAGES_ENDPOINT)
         return url
 
-    @property
-    def snapshot_image(self):
-        """Returns a near realtime JPEG snapshot for this camera"""
+    async def get_snapshot_image(self, filename=None):
+        """Downloads a near realtime JPEG snapshot for this camera"""
+
+        # Update camera before retrieving snapshot as node ID changes frequently
+        await self.update()
         url = self.snapshot_url
 
-        image = self._logi.query(
-            url=url, relative_to_api_root=False, stream=True, raw=True)
+        image = await self._logi._fetch(
+            url=url, relative_to_api_root=False, raw=True)
 
-        if (image.headers['content-type'] == JPEG_MIME_TYPE):
-            return image.content
+        if image.content_type == JPEG_CONTENT_TYPE:
+            # Got an image!
+
+            if filename:
+                # Stream to file
+                await _stream_to_file(image.content, filename)
+                image.close()
+            else:
+                # Return binary object
+                content = await image.read()
+                image.close()
+                return content
         else:
-            raise AssertionError('Expected content-type %s, got %s when retrieving still image for camera %s' %
-                                 (JPEG_MIME_TYPE, image.headers['content-type'], self.name))
+            _LOGGER.error('Expected content-type %s, got %s when retrieving still image for camera %s',
+                          JPEG_CONTENT_TYPE, image.content_type, self.name)
+            raise UnexpectedContentType()
+
+    async def set_power(self, status):
+        """Disables streaming for this camera."""
+
+        if status != 'on' and status != 'off':
+            raise ValueError('"on" or "off" expected for status argument.')
+
+        _LOGGER.debug('Setting power for %s to %s', self.name, status)
+
+        url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
+        payload = {"streamingMode": status}
+
+        req = await self._logi._fetch(
+            url=url, method='PUT', request_body=payload, raw=True)
+
+        if req.status < 300:
+            self._attrs['is_streaming'] = status == 'on'
+            return True
+        else:
+            return False
 
     @property
     def id(self):
@@ -158,8 +212,13 @@ class Camera(object):
 
     @property
     def is_connected(self):
-        """ Return bool indicating whether device is online and capable of returning video. """
+        """Return bool indicating whether device is online and can accept commands (hard "on")."""
         return self._attrs.get('is_connected')
+
+    @property
+    def is_streaming(self):
+        """Return bool indicating whether device is streaming video (soft "on")."""
+        return self._attrs.get('is_streaming')
 
     @property
     def battery_level(self):
@@ -194,3 +253,13 @@ class Camera(object):
         if signal_strength > 20:
             return 'Poor'
         return 'Bad'
+
+    @property
+    def temperature(self):
+        """Return temperature (returns None if not supported by device)."""
+        return self._attrs.get('temperature')
+
+    @property
+    def humidity(self):
+        """Return relative humidity (returns None if not supported by device)."""
+        return self._attrs.get('humidity')

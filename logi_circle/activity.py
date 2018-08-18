@@ -1,14 +1,18 @@
+"""Activity class, represents activity observed by your camera (maximum 3 minutes)"""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 from datetime import datetime, timedelta
 import logging
 import pytz
-from logi_circle.const import (ISO8601_FORMAT_MASK)
+from .const import (ISO8601_FORMAT_MASK, VIDEO_CONTENT_TYPE)
+from .utils import _stream_to_file
+from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Activity(object):
+    """Generic implementation for a Logi Circle activity."""
 
     def __init__(self, camera, activity, url, local_tz, logi):
         """Initialize Activity object."""
@@ -44,19 +48,27 @@ class Activity(object):
         """Returns the download URL for the current activity."""
         return '%s/%s/mp4' % (self._url, self.activity_id)
 
-    def download(self, filename=None):
+    async def download(self, filename=None):
         """Download the activity as an MP4, optionally saving to disk."""
         url = self.download_url
 
-        req = self._logi.query(url=url, method='GET', raw=True)
-        req.raise_for_status()
+        video = await self._logi._fetch(url=url, method='GET', raw=True)
 
-        if filename:
-            with open(filename, 'wb+') as recording:
-                recording.write(req.content)
-                return
+        if video.content_type == VIDEO_CONTENT_TYPE:
+            # Got a video!
+            if filename:
+                # Stream to file
+                await _stream_to_file(video.content, filename)
+                video.close()
+            else:
+                # Return binary object
+                content = await video.read()
+                video.close()
+                return content
         else:
-            return req.content
+            _LOGGER.error('Expected content-type %s, got %s when retrieving activity video.',
+                          VIDEO_CONTENT_TYPE, video.content_type)
+            raise UnexpectedContentType()
 
     @property
     def activity_id(self):
