@@ -10,7 +10,7 @@ def readme():
 setup(
     name='logi_circle',
     packages=['logi_circle'],
-    version='0.0.3',
+    version='0.0.4',
     description='A Python library to communicate with Logi Circle cameras',
     long_description=readme(),
     author='Evan Bruhn',
@@ -18,7 +18,7 @@ setup(
     url='https://github.com/evanjd/python-logi-circle',
     license='MIT',
     include_package_data=True,
-    install_requires=['requests', 'pytz'],
+    install_requires=['aiohttp', 'pytz'],
     test_suite='tests',
     keywords=[
         'logi',
@@ -31,10 +31,11 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
+        'Framework :: AsyncIO',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Home Automation',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],

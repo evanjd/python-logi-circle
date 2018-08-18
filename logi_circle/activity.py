@@ -1,14 +1,17 @@
+"""Activity class, represents activity observed by your camera (maximum 3 minutes)"""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 from datetime import datetime, timedelta
 import logging
 import pytz
 from logi_circle.const import (ISO8601_FORMAT_MASK)
+from logi_circle.utils import _stream_to_file
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Activity(object):
+    """Generic implementation for a Logi Circle activity."""
 
     def __init__(self, camera, activity, url, local_tz, logi):
         """Initialize Activity object."""
@@ -44,19 +47,19 @@ class Activity(object):
         """Returns the download URL for the current activity."""
         return '%s/%s/mp4' % (self._url, self.activity_id)
 
-    def download(self, filename=None):
+    async def download(self, filename=None):
         """Download the activity as an MP4, optionally saving to disk."""
         url = self.download_url
 
-        req = self._logi.query(url=url, method='GET', raw=True)
-        req.raise_for_status()
+        video = await self._logi._fetch(url=url, method='GET', raw=True)
+        print(video.content_type)
 
         if filename:
-            with open(filename, 'wb+') as recording:
-                recording.write(req.content)
-                return
+            # Stream to file
+            await _stream_to_file(video.content, filename)
         else:
-            return req.content
+            # Return binary object
+            return await video.read()
 
     @property
     def activity_id(self):

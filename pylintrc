@@ -1,25 +1,10 @@
 [MASTER]
 reports=no
+max-line-length=120
+good-names=id
 
 disable=
-  locally-disabled,
-  duplicate-code,
-  cyclic-import,
-  abstract-class-little-used,
-  abstract-class-not-used,
-  unused-argument,
-  global-statement,
-  redefined-variable-type,
-  too-many-arguments,
-  too-many-branches,
-  too-many-instance-attributes,
-  too-many-locals,
-  too-many-public-methods,
-  too-many-return-statements,
-  too-many-statements,
-  too-many-lines,
-  too-few-public-methods,
-  abstract-method
+  W0212 #
 
 [EXCEPTIONS]
 overgeneral-exceptions=Exception

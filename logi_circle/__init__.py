@@ -1,18 +1,13 @@
+"""Logi API"""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
-try:
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
-
 import sys
 import logging
 import json
-import requests
 import aiohttp
 
 
-from logi_circle.utils import _get_session_cookie, _exists_cache, _save_cache, _read_cache
+from logi_circle.utils import _get_session_cookie, _handle_response, _exists_cache, _save_cache, _read_cache
 
 from logi_circle.const import (
     API_URI, AUTH_ENDPOINT, CACHE_ATTRS, CACHE_FILE, CAMERAS_ENDPOINT, COOKIE_NAME, VALIDATE_ENDPOINT, HEADERS)
@@ -38,8 +33,13 @@ class Logi(object):
 
     async def login(self):
         """Create a session with the Logi Circle API"""
+        # Close current session before creating a new one
+        if isinstance(self._session, aiohttp.ClientSession):
+            await self._session.close()
+
         if self._reuse_session:
             try:
+                # Restore cached cookie and validate.
                 await self._restore_cached_session()
             except AssertionError:
                 # Fall back to authentication if restoring the cached session fails.
@@ -62,27 +62,27 @@ class Logi(object):
 
         _LOGGER.debug("POSTing login payload to %s", url)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=login_payload) as req:
-                # Handle failed authentication due to incorrect user/pass
-                if req.status == 401:
-                    raise ValueError(
-                        'Username or password provided is incorrect. Could not authenticate.')
+        session = aiohttp.ClientSession()
+        async with session.post(url, json=login_payload) as req:
+            # Handle failed authentication due to incorrect user/pass
+            if req.status == 401:
+                raise ValueError(
+                    'Username or password provided is incorrect. Could not authenticate.')
 
-                # Throw error if authentication failed for any reason (connection issues, outage, etc)
-                req.raise_for_status()
+            # Throw error if authentication failed for any reason (connection issues, outage, etc)
+            req.raise_for_status()
 
-                self._session = session
-                self.is_connected = True
-                _LOGGER.info("Logged in as %s.", self.username)
+            self._session = session
+            self.is_connected = True
+            _LOGGER.info("Logged in as %s.", self.username)
 
-                # Cache account and cookie for later use if reuse_session is true
-                if self._reuse_session:
-                    cookie = _get_session_cookie(session.cookie_jar)
-                    _LOGGER.debug("Persisting session cookie %s", cookie)
-                    self._cache['account'] = self.username
-                    self._cache['cookie'] = cookie.value
-                    _save_cache(self._cache, self._cache_file)
+            # Cache account and cookie for later use if reuse_session is true
+            if self._reuse_session:
+                cookie = _get_session_cookie(session.cookie_jar)
+                _LOGGER.debug("Persisting session cookie %s", cookie)
+                self._cache['account'] = self.username
+                self._cache['cookie'] = cookie.value
+                _save_cache(self._cache, self._cache_file)
 
     async def _restore_cached_session(self):
         """Retrieved cached cookie and validate session."""
@@ -93,9 +93,9 @@ class Logi(object):
 
             if (self._cache['account'] is None) or (self._cache['cookie'] is None):
                 # Cache is missing one or required values.
-                _LOGGER.warn('Cache appears corrupt. Re-authenticating.')
+                _LOGGER.debug('Cache appears corrupt. Re-authenticating.')
                 raise AssertionError('Cache incomplete.')
-            elif (self._cache['account'] != self.username):
+            elif self._cache['account'] != self.username:
                 # Cache does not apply to this user.
                 _LOGGER.debug(
                     'Cached credentials are for a different user. Re-authenticating.')
@@ -103,85 +103,79 @@ class Logi(object):
             else:
                 cookies = {COOKIE_NAME: self._cache['cookie']}
 
-                async with aiohttp.ClientSession(cookies=cookies) as session:
-                    async with session.get(API_URI + VALIDATE_ENDPOINT) as req:
-                        if req.status >= 300:
-                            # Cookie has probably expired, reauthenticate.
-                            session.close()
-                            raise AssertionError(
-                                'Could not authenticate with cached cookie, likely gone stale.')
-                        else:
-                            _LOGGER.info(
-                                "Restored cached session for %s.", self.username)
-                            self._session = session
+                session = aiohttp.ClientSession(cookies=cookies)
+                async with session.get(API_URI + VALIDATE_ENDPOINT) as req:
+                    if req.status >= 300:
+                        # Cookie has probably expired, reauthenticate.
+                        session.close()
+                        raise AssertionError(
+                            'Could not authenticate with cached cookie, likely gone stale.')
+                    else:
+                        _LOGGER.info(
+                            "Restored cached session for %s.", self.username)
+                        self._session = session
 
         else:
             raise AssertionError('Cache not found.')
 
-    def _validate_session(self):
-        """Perform a throwaway request to validate the session is still active, and attempt reauthentication if the session has in fact expired."""
-        url = API_URI + VALIDATE_ENDPOINT
-
-        req = self._session.get((url))
-        if req.status_code != 200:
-            # Cookie has expired, reauthenticate.
-            _LOGGER.debug("Cookie has expired, re-authenticating.")
-            self._authenticate()
-
-        if self.is_connected is None:
-            _LOGGER.info('Logged in with cached cookie.')
-            self.is_connected = True
-
-    def query(self,
-              url,
-              method='GET',
-              params='',
-              request_body=None,
-              relative_to_api_root=True,
-              raw=False,
-              stream=False,
-              headers=HEADERS,
-              _reattempt=False):
+    async def _fetch(self,
+                     url,
+                     method='GET',
+                     params=None,
+                     request_body=None,
+                     relative_to_api_root=True,
+                     raw=False,
+                     _reattempt=False):
         """Query data from the Logi Circle API."""
+
+        if self._session is None:
+            await self.login()
+
         resolved_url = (API_URI + url if relative_to_api_root else url)
-        _LOGGER.debug("Querying %s", resolved_url)
+        _LOGGER.debug("Fetching %s (%s)", resolved_url, method)
 
+        req = None
+
+        # Perform request
+        if method == 'GET':
+            req = await self._session.get(resolved_url, params=params)
+        elif method == 'POST':
+            req = await self._session.post(resolved_url, params=params, json=request_body)
+        elif method == 'PUT':
+            req = await self._session.put(resolved_url, params=params, json=request_body)
+        else:
+            raise ValueError('Method %s not supported.' % (method))
+
+        _LOGGER.debug('Request %s (%s) returned %s',
+                      resolved_url, method, req.status)
+
+        # Handle response
         try:
-            if method == 'GET':
-                req = self._session.get(
-                    (resolved_url), stream=stream, headers=headers, params=urlencode(params))
-            elif method == 'PUT':
-                req = self._session.put(
-                    (resolved_url), stream=stream, headers=headers, params=urlencode(params), json=request_body)
-            elif method == 'POST':
-                req = self._session.post(
-                    (resolved_url), stream=stream, headers=headers, params=urlencode(params), json=request_body)
-
-            _LOGGER.debug("%s returned %s", resolved_url, req.status_code)
-
-        except requests.exceptions.RequestException as err_msg:
-            _LOGGER.error("Error: %s", err_msg)
-            raise
-
-        if req.status_code == 401:
+            return await _handle_response(request=req, raw=raw)
+        except AssertionError:
             if _reattempt:
-                # Should never happen, but want to guard against an infinite loop just in case.
+                # Welp, session still bad even after reauthenticating.
                 _LOGGER.error(
-                    'Request to %s is returning 401 even after successfully reauthenticating.', resolved_url)
-                req.raise_for_status()
-
-            self.is_connected = False
-            return self.query(url=url, method=method, params=params, request_body=request_body, relative_to_api_root=relative_to_api_root, raw=raw, stream=stream, headers=headers, _reattempt=True)
-
-        if raw:
-            return req
-        return req.json()
+                    'Session expired and a new session could not be established.')
+                raise
+            else:
+                # Assume session expiry. Re-authenticate and try again.
+                _LOGGER.debug(
+                    'Session appears to have expired. Re-authenticating.')
+                await self.login()
+                return await self._fetch(url=url,
+                                         method=method,
+                                         params=params,
+                                         request_body=request_body,
+                                         relative_to_api_root=relative_to_api_root,
+                                         raw=raw,
+                                         _reattempt=True)
 
     @property
-    def cameras(self):
+    async def cameras(self):
         """ Return all cameras. """
         cameras = []
-        raw_cameras = self.query(CAMERAS_ENDPOINT)
+        raw_cameras = await self._fetch(CAMERAS_ENDPOINT)
 
         for camera in raw_cameras:
             cameras.append(Camera(self, camera))
