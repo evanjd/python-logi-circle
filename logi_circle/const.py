@@ -26,7 +26,8 @@ ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%S%z'
 
 # API endpoints
 PROTOCOL = 'https'
-API_URI = '%s://video.logi.com/api' % (PROTOCOL)
+API_HOST = 'video.logi.com'
+API_URI = '%s://%s/api' % (PROTOCOL, API_HOST)
 AUTH_ENDPOINT = '/accounts/authorization'
 CAMERAS_ENDPOINT = '/accessories'
 IMAGES_ENDPOINT = '/image'

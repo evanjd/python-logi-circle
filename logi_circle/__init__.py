@@ -20,7 +20,7 @@ class Logi(object):
     """A Python abstraction object to Logi Circle cameras."""
 
     def __init__(self, username, password, reuse_session=True, cache_file=CACHE_FILE):
-        self.is_connected = None
+        self.is_connected = False
         self.params = None
         self.username = username
         self.password = password
