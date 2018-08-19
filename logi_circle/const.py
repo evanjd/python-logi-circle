@@ -22,7 +22,9 @@ except (AttributeError, TypeError):
 COOKIE_NAME = 'prod_session'
 
 # Date formats
-ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%S%z'
+# Yes, we're hard-coding the timezone. "%z" is a py37 only feature,
+# and we know the Logi API always returns dates in UTC.
+ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%SZ'
 
 # API endpoints
 PROTOCOL = 'https'
