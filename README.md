@@ -204,5 +204,5 @@ They're very welcome, every little bit helps! I'm especially keen for help suppo
 [open-issues-url]: https://github.com/evanjd/python-logi-circle/issues
 [travis-badge]: https://travis-ci.com/evanjd/python-logi-circle.svg?branch=master
 [travis-url]: https://travis-ci.com/evanjd/python-logi-circle
-[coverage-badge]: https://coveralls.io/repos/github/evanjd/python-logi-circle/badge.svg?branch=master
+[coverage-badge]: https://img.shields.io/coveralls/github/evanjd/python-logi-circle/master.svg
 [coverage-url]: https://coveralls.io/github/evanjd/python-logi-circle?branch=master
