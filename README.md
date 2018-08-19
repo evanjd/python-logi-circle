@@ -1,14 +1,12 @@
 # Python Logi Circle API
 
-> Python 3.5+ API for interacting with Logi Circle cameras, written with asyncio and aiohttp.
+> Python 3.6+ API for interacting with Logi Circle cameras, written with asyncio and aiohttp.
 
 [![Open Issues][open-issues-badge]][open-issues-url]
 
 This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects. The goal is to expose most of the functionality from Logi's 1st party applications, allowing integration of those features into other projects.
 
 Note that the API this project is based on is not open, and therefore could change/break at any time.
-
-I've only just started this project, so the code is rough, tests aren't done and lots of features are missing. Watch this space.
 
 ## Installation
 
