@@ -52,6 +52,7 @@ class Logi(object):
         if isinstance(self._session, aiohttp.ClientSession):
             await self._session.close()
             self._session = None
+            self.is_connected = False
         else:
             raise NoSession()
 
@@ -78,11 +79,16 @@ class Logi(object):
 
             # Cache account and cookie for later use if reuse_session is true
             if self._reuse_session:
-                cookie = _get_session_cookie(session.cookie_jar)
-                _LOGGER.debug("Persisting session cookie %s", cookie)
-                self._cache['account'] = self.username
-                self._cache['cookie'] = cookie.value
-                _save_cache(self._cache, self._cache_file)
+                try:
+                    cookie = _get_session_cookie(session.cookie_jar)
+                    _LOGGER.debug("Persisting session cookie %s", cookie)
+                    self._cache['account'] = self.username
+                    self._cache['cookie'] = cookie.value
+                    _save_cache(self._cache, self._cache_file)
+                except BadSession:
+                    _LOGGER.error(
+                        "Logi API authenticated successfully, but the session cookie wasn't returned.")
+                    raise
 
     async def _restore_cached_session(self):
         """Retrieved cached cookie and validate session."""
@@ -112,6 +118,7 @@ class Logi(object):
                         _LOGGER.info(
                             "Restored cached session for %s.", self.username)
                         self._session = session
+                        self.is_connected = True
 
         else:
             raise BadCache()

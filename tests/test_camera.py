@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Tests for the Logi API Camera class."""
+from datetime import datetime
 import aresponses
 from tests.test_base import LogiUnitTestBase
-from logi_circle.const import API_HOST, AUTH_ENDPOINT, CAMERAS_ENDPOINT
+from logi_circle.const import API_HOST, AUTH_ENDPOINT, CAMERAS_ENDPOINT, ACTIVITIES_ENDPOINT, ACCESSORIES_ENDPOINT
+from logi_circle.activity import Activity
 
 
 class TestCamera(LogiUnitTestBase):
@@ -96,5 +98,95 @@ class TestCamera(LogiUnitTestBase):
                     camera.signal_strength_category, 'Good', 'Signal strength category mismatch after update')
                 self.assertEqual(
                     camera.battery_level, 90, 'Battery level mismatch after update')
+
+        self.loop.run_until_complete(run_test())
+
+    def test_last_activity(self):
+        """Test retrieval of last camera activity"""
+        logi = self.logi_no_reuse
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, '/api' + AUTH_ENDPOINT, 'post',
+                          aresponses.Response(status=200))
+                arsps.add(API_HOST, '/api' + CAMERAS_ENDPOINT, 'get',
+                          aresponses.Response(status=200,
+                                              text=self.fixtures['accessories'],
+                                              headers={'content-type': 'application/json'}))
+                arsps.add(API_HOST, '/api' + CAMERAS_ENDPOINT + '/mock-camera' + ACTIVITIES_ENDPOINT, 'post',
+                          aresponses.Response(status=200,
+                                              text=self.fixtures['activities_1'],
+                                              headers={'content-type': 'application/json'}))
+
+                # Perform implicit login, and get camera
+                camera = (await logi.cameras)[0]
+                # Get activity
+                last_activity = await camera.last_activity
+                self.assertIsInstance(last_activity, Activity)
+
+        self.loop.run_until_complete(run_test())
+
+    def test_get_activity_history(self):
+        """Test retrieval of camera activity history"""
+        logi = self.logi_no_reuse
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, '/api' + AUTH_ENDPOINT, 'post',
+                          aresponses.Response(status=200))
+                arsps.add(API_HOST, '/api' + CAMERAS_ENDPOINT, 'get',
+                          aresponses.Response(status=200,
+                                              text=self.fixtures['accessories'],
+                                              headers={'content-type': 'application/json'}))
+                arsps.add(API_HOST, '/api' + CAMERAS_ENDPOINT + '/mock-camera' + ACTIVITIES_ENDPOINT, 'post',
+                          aresponses.Response(status=200,
+                                              text=self.fixtures['activities_5'],
+                                              headers={'content-type': 'application/json'}))
+
+                # Perform implicit login, and get camera
+                camera = (await logi.cameras)[0]
+                # Get activity history
+                activities = await camera.query_activity_history(date_filter=datetime.now(),
+                                                                 date_operator='<',
+                                                                 property_filter='playbackDuration > 0',
+                                                                 limit=5)
+                self.assertEqual(len(activities), 5)
+                for activity in activities:
+                    self.assertIsInstance(activity, Activity)
+
+        self.loop.run_until_complete(run_test())
+
+    def test_power_method(self):
+        """Test enabling and disabling of power status"""
+        logi = self.logi_no_reuse
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, '/api' + AUTH_ENDPOINT, 'post',
+                          aresponses.Response(status=200))
+                arsps.add(API_HOST, '/api' + CAMERAS_ENDPOINT, 'get',
+                          aresponses.Response(status=200,
+                                              text=self.fixtures['accessories'],
+                                              headers={'content-type': 'application/json'}))
+                arsps.add(API_HOST, '/api' + ACCESSORIES_ENDPOINT + '/mock-camera', 'put',
+                          aresponses.Response(status=200))
+                arsps.add(API_HOST, '/api' + ACCESSORIES_ENDPOINT + '/mock-camera', 'put',
+                          aresponses.Response(status=200))
+
+                # Perform implicit login, and get camera
+                camera = (await logi.cameras)[0]
+                # Streaming mode is on (as per fixture)
+                self.assertTrue(
+                    camera.is_streaming, 'Camera is_streaming mismatch')
+                # Disable streaming
+                await camera.set_power('off')
+                # Streaming mode is off
+                self.assertFalse(camera.is_streaming,
+                                 'Camera streaming is on after turning off')
+                # Enable streaming
+                await camera.set_power('on')
+                # Streaming mode is on
+                self.assertTrue(camera.is_streaming,
+                                'Camera streaming is off after turning on')
 
         self.loop.run_until_complete(run_test())
