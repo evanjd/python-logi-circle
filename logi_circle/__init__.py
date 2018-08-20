@@ -16,7 +16,7 @@ from .exception import BadSession, NoSession, BadCache
 _LOGGER = logging.getLogger(__name__)
 
 
-class Logi(object):
+class Logi():
     """A Python abstraction object to Logi Circle cameras."""
 
     def __init__(self, username, password, reuse_session=True, cache_file=CACHE_FILE):
