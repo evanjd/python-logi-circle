@@ -7,13 +7,14 @@ import pytz
 from .const import (
     PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE)
 from .activity import Activity
+from .live_stream import LiveStream
 from .utils import _stream_to_file
 from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Camera(object):
+class Camera():
     """Generic implementation for Logi Circle camera."""
 
     def __init__(self, logi, camera):
@@ -114,6 +115,11 @@ class Camera(object):
             activities.append(activity)
 
         return activities
+
+    @property
+    def live_stream(self):
+        """Return LiveStream object."""
+        return LiveStream(self, self._logi)
 
     @property
     async def last_activity(self):

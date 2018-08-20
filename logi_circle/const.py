@@ -33,6 +33,7 @@ API_URI = '%s://%s/api' % (PROTOCOL, API_HOST)
 AUTH_ENDPOINT = '/accounts/authorization'
 CAMERAS_ENDPOINT = '/accessories'
 IMAGES_ENDPOINT = '/image'
+LIVESTREAM_ENDPOINT = '/mpd'
 ACTIVITIES_ENDPOINT = '/activities'
 ACCESSORIES_ENDPOINT = '/accessories'
 VALIDATE_ENDPOINT = '/accounts/self'
@@ -40,3 +41,4 @@ VALIDATE_ENDPOINT = '/accounts/self'
 # Misc
 JPEG_CONTENT_TYPE = 'image/jpeg'
 VIDEO_CONTENT_TYPE = 'application/octet-stream'
+LIVESTREAM_XMLNS = 'urn:mpeg:dash:schema:mpd:2011'

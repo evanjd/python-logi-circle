@@ -11,7 +11,7 @@ from .exception import UnexpectedContentType
 _LOGGER = logging.getLogger(__name__)
 
 
-class Activity(object):
+class Activity():
     """Generic implementation for a Logi Circle activity."""
 
     def __init__(self, camera, activity, url, local_tz, logi):

@@ -43,6 +43,7 @@ PyPi package soon.
   - End time (local or UTC)
   - Duration
   - Relevance level (indicating whether people/objects were detected)
+- Download real-time live stream data to disk or serve to your application as a raw bytes object
 - Query/filter the activity history by start time and/or activity properties (duration, relevance)
 - Download any activity video to disk or serve to your application as a raw bytes object
 - Download still images from camera to disk or serve to your application as a raw bytes object
@@ -51,7 +52,6 @@ PyPi package soon.
 
 ## Features planned
 
-- Live streaming support (soon)
 - Motion alerts (eventually)
 - Logi Circle CLI (eventually)
 
@@ -92,6 +92,27 @@ async def get_latest_activity():
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(get_latest_activity())
+loop.close()
+```
+
+#### Download live stream data to disk:
+
+##### You can use FFMPEG to concatenate the segments into an individual file.
+
+```python
+async def get_livestream():
+    camera = (await logi_api.cameras)[1]
+    live_stream = camera.live_stream
+    count = 1
+
+    while True:
+        # Keep writing until interrupted
+        filename = '%s-segment-%s.mp4' % (camera.name, count)
+        await live_stream.get_segment(filename=filename)
+        count += 1
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(get_livestream())
 loop.close()
 ```
 
@@ -175,6 +196,8 @@ loop.close()
   - Replaced requests with aiohttp
   - Added support for turning camera on & off
   - Added update() method to Camera object to refresh data from server
+- 0.1.0
+  - Added preliminary support for live streams (to be improved)
 
 ## Meta
 
@@ -191,12 +214,12 @@ Distributed under the MIT license. See `LICENSE` for more information.
 
 They're very welcome, every little bit helps! I'm especially keen for help supporting devices that I do not own and cannot test with (eg. Circle 2 indoor & outdoor cameras).
 
-1. Fork it (<https://github.com/evanjd/python-logi-circle/fork>)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
-3. Make sure there's no linting errors.
-4. Commit your changes (`git commit -am 'Add some fooBar'`)
-5. Push to the branch (`git push origin feature/fooBar`)
-6. Create a new Pull Request
+1. Fork it (<https://github.com/evanjd/python-logi-circle/fork>).
+2. Create your feature branch (`git checkout -b feature/fooBar`).
+3. Commit your changes (`git commit -am 'Add some fooBar'`).
+4. Add/update tests if needed, then run `tox` to confirm no test failures.
+5. Push to the branch (`git push origin feature/fooBar`).
+6. Create a new pull request!
 
 <!-- Markdown link & img dfn's -->
 
