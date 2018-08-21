@@ -12,14 +12,18 @@ Note that the API this project is based on is not open, and therefore could chan
 
 ## Installation
 
+#### Installing release version
+
+```bash
+$ pip install logi-circle
+```
+
 #### Installing development master
 
 ```bash
 $ pip install \
     git+https://github.com/evanjd/python-logi-circle
 ```
-
-PyPi package soon.
 
 ## Features available
 
