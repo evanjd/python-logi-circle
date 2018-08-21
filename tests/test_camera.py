@@ -44,6 +44,8 @@ class TestCamera(LogiUnitTestBase):
                 self.assertEqual(
                     camera.node_id, 'node-mocked.video.logi.com', 'Node ID mismatch')
                 self.assertEqual(
+                    camera.firmware, '999.9.999', 'Firmware mismatch')
+                self.assertEqual(
                     camera.timezone, 'Australia/Sydney', 'Timezone mismatch')
                 self.assertEqual(
                     camera.signal_strength_percentage, 99, 'Signal strength mismatch')
@@ -53,6 +55,26 @@ class TestCamera(LogiUnitTestBase):
                     camera.temperature, 20, 'Temperature mismatch')
                 self.assertEqual(
                     camera.humidity, 50, 'Humidity mismatch')
+                self.assertEqual(
+                    camera.ip_address, '127.0.0.1', 'IP address mismatch')
+                self.assertEqual(
+                    camera.mac_address, '00:00:00:00:00:00', 'MAC address mismatch')
+                self.assertEqual(
+                    camera.wifi_ssid, 'Mock LAN', 'WiFi SSID mismatch')
+                self.assertEqual(
+                    camera.microphone_on, True, 'Microphone status mismatch')
+                self.assertEqual(
+                    camera.microphone_gain, 100, 'Microphone gain mismatch')
+                self.assertEqual(
+                    camera.speaker_on, True, 'Speaker status mismatch')
+                self.assertEqual(
+                    camera.speaker_volume, 90, 'Speaker volume mismatch')
+                self.assertEqual(
+                    camera.led_on, False, 'LED status mismatch')
+                self.assertEqual(
+                    camera.privacy_mode, False, 'Privacy mode mismatch')
+                self.assertEqual(
+                    camera.plan_name, 'Mock Plan', 'Plan name mismatch')
 
         self.loop.run_until_complete(run_test())
 
@@ -179,12 +201,12 @@ class TestCamera(LogiUnitTestBase):
                 self.assertTrue(
                     camera.is_streaming, 'Camera is_streaming mismatch')
                 # Disable streaming
-                await camera.set_power('off')
+                await camera.set_streaming_mode(False)
                 # Streaming mode is off
                 self.assertFalse(camera.is_streaming,
                                  'Camera streaming is on after turning off')
                 # Enable streaming
-                await camera.set_power('on')
+                await camera.set_streaming_mode(True)
                 # Streaming mode is on
                 self.assertTrue(camera.is_streaming,
                                 'Camera streaming is off after turning on')

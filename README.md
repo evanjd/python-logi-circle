@@ -23,19 +23,34 @@ PyPi package soon.
 
 ## Features available
 
+- Download real-time live stream data to disk or serve to your application as a raw bytes object
+- Query/filter the activity history by start time and/or activity properties (duration, relevance)
+- Download any activity video to disk or serve to your application as a raw bytes object
+- Download still images from camera to disk or serve to your application as a raw bytes object
+- Set streaming mode, privacy mode, LED status, speaker volume, microphone gain and other properties of camera
+- On-demand polling from server to update camera properties
 - Camera properties exposed:
   - ID
   - Node ID
   - Name
+  - Live image (as JPEG)
+  - Last activity
   - Timezone
   - Connected status (is it powered and in range)
   - Streaming status (is currently streaming and capable of recording activities)
+  - Privacy mode (is it recording activities)
+  - Firmware version
   - Battery %
   - Charging status
   - Model
+  - Connected Wifi SSID
   - Signal strength %
-  - Last activity
-  - Live image (as JPEG)
+  - IP address
+  - MAC address
+  - Microphone status and gain
+  - Speaker status and volume
+  - LED enabled
+  - Plan name
   - Temperature (if supported by your device)
   - Relative humidity % (if supported by your device)
 - Activity properties exposed:
@@ -43,17 +58,12 @@ PyPi package soon.
   - End time (local or UTC)
   - Duration
   - Relevance level (indicating whether people/objects were detected)
-- Download real-time live stream data to disk or serve to your application as a raw bytes object
-- Query/filter the activity history by start time and/or activity properties (duration, relevance)
-- Download any activity video to disk or serve to your application as a raw bytes object
-- Download still images from camera to disk or serve to your application as a raw bytes object
-- Enable/disable streaming
-- On-demand polling from server to update camera properties
 
 ## Features planned
 
 - Motion alerts (eventually)
 - Logi Circle CLI (eventually)
+- Speaker support (maybe)
 
 ## Usage example
 
@@ -95,21 +105,17 @@ loop.run_until_complete(get_latest_activity())
 loop.close()
 ```
 
-#### Download live stream data to disk:
-
-##### You can use FFMPEG to concatenate the segments into an individual file.
+#### Stream live stream data to disk:
 
 ```python
 async def get_livestream():
-    camera = (await logi_api.cameras)[1]
+    camera = (await logi_api.cameras)[0]
     live_stream = camera.live_stream
-    count = 1
 
     while True:
-        # Keep writing until interrupted
-        filename = '%s-segment-%s.mp4' % (camera.name, count)
-        await live_stream.get_segment(filename=filename)
-        count += 1
+        # Keep appending to live stream MP4 until interrupted
+        filename = '%s-livestream.mp4' % (camera.name)
+        await live_stream.get_segment(filename=filename,append=True)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(get_livestream())
@@ -153,7 +159,7 @@ loop.run_until_complete(future)
 async def disable_streaming_all():
     for camera in await logi_api.cameras:
         if camera.is_streaming:
-            await camera.set_power('off')
+            await camera.set_streaming_mode(False)
             print('%s is now %s.' %
                   (camera.name, 'on' if camera.is_streaming else 'off'))
         else:
@@ -171,12 +177,28 @@ loop.close()
 async def play_with_props():
     for camera in await logi_api.cameras:
         last_activity = await camera.last_activity
-        print('%s: %s' % (camera.name, ('is charging' if camera.is_charging else 'is not charging')))
-        print('%s: %s%% battery remaining' % (camera.name, camera.battery_level))
+        print('%s: %s' % (camera.name,
+                          ('is charging' if camera.is_charging else 'is not charging')))
+        print('%s: %s%% battery remaining' %
+              (camera.name, camera.battery_level))
         print('%s: Model number is %s' % (camera.name, camera.model))
-        print('%s: Signal strength is %s%% (%s)' % (camera.name, camera.signal_strength_percentage, camera.signal_strength_category))
+        print('%s: Signal strength is %s%% (%s)' % (
+            camera.name, camera.signal_strength_percentage, camera.signal_strength_category))
         print('%s: last activity was at %s and lasted for %s seconds.' % (
             camera.name, last_activity.start_time.isoformat(), last_activity.duration.total_seconds()))
+        print('%s: Firmware version %s' % (camera.name, camera.firmware))
+        print('%s: IP address is %s' % (camera.name, camera.ip_address))
+        print('%s: MAC address is %s' % (camera.name, camera.mac_address))
+        print('%s: Microphone is %s and gain is set to %s (out of 100)' % (
+            camera.name, 'on' if camera.microphone_on else 'off', camera.microphone_gain))
+        print('%s: Speaker is %s and volume is set to %s (out of 100)' % (
+            camera.name, 'on' if camera.speaker_on else 'off', camera.speaker_volume))
+        print('%s: LED is %s' % (
+            camera.name, 'on' if camera.led_on else 'off'))
+        print('%s: Privacy mode is %s' % (
+            camera.name, 'on' if camera.privacy_mode else 'off'))
+        print('%s: Subscribed to plan %s' % (
+            camera.name, camera.plan_name))
     await logi_api.logout()
 
 loop = asyncio.get_event_loop()
@@ -198,6 +220,11 @@ loop.close()
   - Added update() method to Camera object to refresh data from server
 - 0.1.0
   - Added preliminary support for live streams (to be improved)
+- 0.1.1
+  - Fixed timing bug causing live streams to download at half real-time speeds
+  - Live streams will now automatically append to an existing file (instead of overwriting)
+  - Added a bunch of new camera properties
+  - Added support for setting privacy mode, LED status, speaker status, speaker volume, microphone status and microphone gain
 
 ## Meta
 

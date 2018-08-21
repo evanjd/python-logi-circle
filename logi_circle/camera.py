@@ -10,6 +10,7 @@ from .activity import Activity
 from .live_stream import LiveStream
 from .utils import _stream_to_file
 from .exception import UnexpectedContentType
+from aiohttp.client_exceptions import ClientResponseError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +50,17 @@ class Camera():
         self._attrs['wifi_signal_strength'] = config.get(
             'wifiSignalStrength', None)
         self._attrs['firmware'] = config.get('firmwareVersion', None)
+        self._attrs['ip_address'] = config.get('ipAddress', None)
+        self._attrs['mac_address'] = config.get('macAddress', None)
+        self._attrs['wifi_ssid'] = config.get('wifiSsid', None)
+        self._attrs['microphone_on'] = config.get('microphoneOn', False)
+        self._attrs['microphone_gain'] = config.get('microphoneGain', None)
+        self._attrs['speaker_on'] = config.get('speakerOn', False)
+        self._attrs['speaker_volume'] = config.get('speakerVolume', None)
+        self._attrs['led'] = config.get('ledEnabled', False)
+        self._attrs['privacy_mode'] = config.get('privacyMode', False)
+        self._attrs['plan_name'] = camera.get('planName', False)
+
         if config.get('humidityIsAvailable', False):
             self._attrs['humidity'] = config.get('humidity', None)
         else:
@@ -176,25 +188,56 @@ class Camera():
                           JPEG_CONTENT_TYPE, image.content_type, self.name)
             raise UnexpectedContentType()
 
-    async def set_power(self, status):
-        """Disables streaming for this camera."""
+    async def set_streaming_mode(self, status):
+        """Sets streaming mode for this camera."""
+        translated_status = ('on' if status else 'off')
+        await self._set_config(prop='streamingMode', internal_prop='is_streaming', value=translated_status, internal_value=status, value_type=str)
 
-        if status != 'on' and status != 'off':
-            raise ValueError('"on" or "off" expected for status argument.')
+    async def set_microphone(self, status=None, gain=None):
+        """Sets microphone status and/or gain."""
+        if status:
+            await self._set_config(prop='microphoneOn', internal_prop='microphone_on', value=status, value_type=bool)
+        if gain:
+            await self._set_config(prop='microphoneGain', internal_prop='microphone_gain', value=gain, value_type=int)
 
-        _LOGGER.debug('Setting power for %s to %s', self.name, status)
+    async def set_speaker(self, status=None, volume=None):
+        """Sets speaker status and/or volume."""
+        if status:
+            await self._set_config(prop='speakerOn', internal_prop='speaker_on', value=status, value_type=bool)
+        if volume:
+            await self._set_config(prop='speakerVolume', internal_prop='speaker_volume', value=volume, value_type=int)
+
+    async def set_led(self, status):
+        """Sets LED on or off."""
+        await self._set_config(prop='ledEnabled', internal_prop='led', value=status, value_type=bool)
+
+    async def set_privacy_mode(self, status):
+        """Sets privacy mode on or off."""
+        await self._set_config(prop='privacyMode', internal_prop='privacy_mode', value=status, value_type=bool)
+
+    async def _set_config(self, prop, internal_prop, value, value_type, internal_value=None):
+        """Internal method for updating the camera's configuration"""
+        if not isinstance(value, value_type):
+            raise ValueError('%s expected for status argument' % (value_type))
 
         url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
-        payload = {"streamingMode": status}
+        payload = {prop: value}
 
-        req = await self._logi._fetch(
-            url=url, method='PUT', request_body=payload, raw=True)
+        _LOGGER.debug('Setting %s to %s', prop, str(value))
 
-        if req.status < 300:
-            self._attrs['is_streaming'] = status == 'on'
-            return True
-        else:
-            return False
+        try:
+            req = await self._logi._fetch(
+                url=url, method='PUT', request_body=payload, raw=True)
+            req.close()
+
+            # Update camera props to reflect change
+            self._attrs[internal_prop] = internal_value if internal_value is not None else value
+            _LOGGER.debug('Successfully set %s to %s', prop,
+                          str(value))
+        except ClientResponseError as error:
+            _LOGGER.error(
+                'Status code %s returned when updating %s to %s', error.code, prop, str(value))
+            raise
 
     @property
     def id(self):
@@ -242,6 +285,11 @@ class Camera():
         return self._attrs.get('model')
 
     @property
+    def firmware(self):
+        """Return firmware version."""
+        return self._attrs.get('firmware')
+
+    @property
     def signal_strength_percentage(self):
         """Return signal strength between 0-100 (0 = bad, 100 = excellent)."""
         return self._attrs.get('wifi_signal_strength')
@@ -269,3 +317,61 @@ class Camera():
     def humidity(self):
         """Return relative humidity (returns None if not supported by device)."""
         return self._attrs.get('humidity')
+
+    @property
+    def ip_address(self):
+        """Return local IP address for camera."""
+        return self._attrs.get('ip_address')
+
+    @property
+    def mac_address(self):
+        """Return MAC address for camera's WiFi interface."""
+        return self._attrs.get('mac_address')
+
+    @property
+    def wifi_ssid(self):
+        """Return WiFi SSID name the camera last connected with."""
+        return self._attrs.get('wifi_ssid')
+
+    @property
+    def microphone_on(self):
+        """Return bool indicating whether microphone is enabled."""
+        return self._attrs.get('microphone_on')
+
+    @property
+    def microphone_gain(self):
+        """Return microphone gain using absolute scale (1-100)."""
+        gain = self._attrs.get('microphone_gain')
+        try:
+            return int(gain)
+        except ValueError:
+            return gain
+
+    @property
+    def speaker_on(self):
+        """Return bool indicating whether speaker is currently enabled."""
+        return self._attrs.get('speaker_on')
+
+    @property
+    def speaker_volume(self):
+        """Return speaker volume using absolute scale (1-100)."""
+        volume = self._attrs.get('speaker_volume')
+        try:
+            return int(volume)
+        except ValueError:
+            return volume
+
+    @property
+    def led_on(self):
+        """Return bool indicating whether LED is enabled."""
+        return self._attrs.get('led')
+
+    @property
+    def privacy_mode(self):
+        """Return bool indicating whether privacy mode is enabled (ie. no activities recorded)."""
+        return self._attrs.get('privacy_mode')
+
+    @property
+    def plan_name(self):
+        """Return plan/subscription product assigned to camera (free tier, paid tier, etc)."""
+        return self._attrs.get('plan_name')

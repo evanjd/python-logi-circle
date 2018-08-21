@@ -37,25 +37,20 @@ async def _handle_response(request, raw):
         return resp
 
 
-async def _combine_stream_and_write(init_data, stream, filename):
-    """Combine DASH init data and stream and write to file"""
-    with open(filename, 'wb') as file_handle:
-        file_handle.write(init_data)
-        while True:
-            chunk = await stream.read(1024)
-            if not chunk:
-                break
-            file_handle.write(chunk)
-
-
-async def _stream_to_file(stream, filename):
+async def _stream_to_file(stream, filename, open_mode='wb'):
     """Stream aiohttp response to file"""
-    with open(filename, 'wb') as file_handle:
+    with open(filename, open_mode) as file_handle:
         while True:
             chunk = await stream.read(1024)
             if not chunk:
                 break
             file_handle.write(chunk)
+
+
+def _write_to_file(data, filename):
+    """Write bytes data to file"""
+    with open(filename, 'wb') as file_handle:
+        file_handle.write(data)
 
 
 def _clean_cache(filename):

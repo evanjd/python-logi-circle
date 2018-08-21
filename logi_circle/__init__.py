@@ -11,7 +11,7 @@ from .utils import _get_session_cookie, _handle_response, _exists_cache, _save_c
 from .const import (
     API_URI, AUTH_ENDPOINT, CACHE_ATTRS, CACHE_FILE, CAMERAS_ENDPOINT, COOKIE_NAME, VALIDATE_ENDPOINT, HEADERS)
 from .camera import Camera
-from .exception import BadSession, NoSession, BadCache
+from .exception import BadSession, NoSession, BadCache, BadLogin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class Logi():
         async with session.post(url, json=login_payload, headers=HEADERS) as req:
             # Handle failed authentication due to incorrect user/pass
             if req.status == 401:
-                raise ValueError(
+                raise BadLogin(
                     'Username or password provided is incorrect. Could not authenticate.')
 
             # Throw error if authentication failed for any reason (connection issues, outage, etc)

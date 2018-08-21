@@ -17,3 +17,7 @@ class NoSession(Exception):
 
 class BadCache(Exception):
     """Cached credentials incomplete, corrupt or do not apply to current user"""
+
+
+class BadLogin(Exception):
+    """Username or password rejected"""

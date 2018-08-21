@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 from .const import (PROTOCOL, ACCESSORIES_ENDPOINT,
                     LIVESTREAM_ENDPOINT, LIVESTREAM_XMLNS)
-from .utils import _combine_stream_and_write
+from .utils import _stream_to_file, _write_to_file
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class LiveStream():
         self._initialised = False
         self._mpd_data = {}
         self._next_segment_time = None
+        self._last_filename = None
 
     def _get_mpd_url(self):
         """Returns the URL for the MPD file"""
@@ -94,14 +95,15 @@ class LiveStream():
             '$Number$', str(self._index))
         return '%s%s' % (base_url, file_name)
 
-    async def get_segment(self, filename=None):
+    async def get_segment(self, filename=None, append=True):
         """Returns the current segment video from the live stream"""
         # Initialise if required
         if self._initialised is False:
             await self._initialise()
 
-        # Get current wait time
+        # Get current wait time and set timer for next download
         wait_time = self._get_time_before_next_stream()
+        self._set_next_stream_time()
 
         _LOGGER.debug(
             'Sleeping for %s seconds before grabbing next live stream segment.', wait_time)
@@ -109,22 +111,29 @@ class LiveStream():
         if wait_time > 0:
             await asyncio.sleep(wait_time)
 
-        self._set_next_stream_time()
-
         # Get segment data
         url = self._get_segment_url()
         segment = await self._logi._fetch(
             url=url, relative_to_api_root=False, raw=True)
 
-        # Increment segment counter and timer for next download
+        # Increment segment counter
         self._index += 1
 
         if filename:
-            # Stream to file
-            await _combine_stream_and_write(init_data=self._initialisation_file,
-                                            stream=segment.content,
-                                            filename=filename)
-            segment.close()
+            if filename == self._last_filename and append:
+                # Append to existing file
+                _LOGGER.debug(
+                    'Appending video segment to %s', filename)
+                await _stream_to_file(stream=segment.content, filename=filename, open_mode='ab')
+                segment.close()
+            else:
+                # Write init header and segment (init a new file)
+                _LOGGER.debug(
+                    'Writing init header and segment to file %s', filename)
+                _write_to_file(self._initialisation_file, filename)
+                await _stream_to_file(stream=segment.content, filename=filename, open_mode='ab')
+                segment.close()
+            self._last_filename = filename
         else:
             # Return binary object
             content = await segment.read()
