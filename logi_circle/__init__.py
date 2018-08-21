@@ -177,6 +177,13 @@ class Logi():
                                          _reattempt=True)
 
     @property
+    def cookie(self):
+        """Returns a cookie string that can be used for requests external to this library"""
+        if self._session is None:
+            return False
+        return '%s=%s' % (COOKIE_NAME, _get_session_cookie(self._session.cookie_jar).value)
+
+    @property
     async def cameras(self):
         """ Return all cameras. """
         cameras = []

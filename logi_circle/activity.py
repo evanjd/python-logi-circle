@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 import logging
 import pytz
-from .const import (ISO8601_FORMAT_MASK, VIDEO_CONTENT_TYPE)
+from .const import (ISO8601_FORMAT_MASK, VIDEO_CONTENT_TYPE, API_URI)
 from .utils import _stream_to_file
 from .exception import UnexpectedContentType
 
@@ -46,13 +46,13 @@ class Activity():
     @property
     def download_url(self):
         """Returns the download URL for the current activity."""
-        return '%s/%s/mp4' % (self._url, self.activity_id)
+        return '%s%s/%s/mp4' % (API_URI, self._url, self.activity_id)
 
     async def download(self, filename=None):
         """Download the activity as an MP4, optionally saving to disk."""
         url = self.download_url
 
-        video = await self._logi._fetch(url=url, method='GET', raw=True)
+        video = await self._logi._fetch(url=url, method='GET', raw=True, relative_to_api_root=False)
 
         if video.content_type == VIDEO_CONTENT_TYPE:
             # Got a video!
