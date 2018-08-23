@@ -8,7 +8,7 @@ from .const import (
     PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE)
 from .activity import Activity
 from .live_stream import LiveStream
-from .utils import _stream_to_file
+from .utils import _stream_to_file, _model_number_to_name
 from .exception import UnexpectedContentType
 from aiohttp.client_exceptions import ClientResponseError
 
@@ -41,8 +41,8 @@ class Camera():
             raise
 
         # Optional attributes
-        self._attrs['is_streaming'] = config.get(
-            'streamingMode', 'off') == 'on'
+        self._attrs['streaming_mode'] = config.get(
+            'streamingMode', 'off')
         self._attrs['timezone'] = config.get('timeZone', 'UTC')
         self._attrs['battery_level'] = config.get('batteryLevel', None)
         self._attrs['is_charging'] = config.get('batteryCharging', None)
@@ -61,6 +61,7 @@ class Camera():
         self._attrs['privacy_mode'] = config.get('privacyMode', False)
         self._attrs['plan_name'] = camera.get('planName', False)
 
+        # These sensors don't appear to be present on any devices sold in the market today.
         if config.get('humidityIsAvailable', False):
             self._attrs['humidity'] = config.get('humidity', None)
         else:
@@ -190,8 +191,7 @@ class Camera():
 
     async def set_streaming_mode(self, status):
         """Sets streaming mode for this camera."""
-        translated_status = ('on' if status else 'off')
-        await self._set_config(prop='streamingMode', internal_prop='is_streaming', value=translated_status, internal_value=status, value_type=str)
+        await self._set_config(prop='streamingMode', internal_prop='streaming_mode', value=status, value_type=str)
 
     async def set_microphone(self, status=None, gain=None):
         """Sets microphone status and/or gain."""
@@ -265,14 +265,18 @@ class Camera():
         return self._attrs.get('is_connected')
 
     @property
-    def is_streaming(self):
-        """Return bool indicating whether device is streaming video (soft "on")."""
-        return self._attrs.get('is_streaming')
+    def streaming_mode(self):
+        """Return streaming mode for camera (eg. off = 'soft off', on = 'soft on', onAlert = 'streams when motion is detected')."""
+        return self._attrs.get('streaming_mode')
 
     @property
     def battery_level(self):
         """Return battery level (integer between 0-100)."""
-        return self._attrs.get('battery_level')
+        battery_level = self._attrs.get('battery_level')
+        try:
+            return int(battery_level)
+        except ValueError:
+            return battery_level
 
     @property
     def is_charging(self):
@@ -283,6 +287,14 @@ class Camera():
     def model(self):
         """Return model number."""
         return self._attrs.get('model')
+
+    @property
+    def model_name(self):
+        """Return product name, derived from other camera properties."""
+        if isinstance(self.battery_level, int):
+            return _model_number_to_name(self.model, self.battery_level)
+        else:
+            return _model_number_to_name(self.model)
 
     @property
     def firmware(self):

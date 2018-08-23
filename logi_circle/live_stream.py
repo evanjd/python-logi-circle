@@ -76,11 +76,12 @@ class LiveStream():
 
         return self._initialisation_file + segment_file
 
-    def _set_next_stream_time(self):
+    def _set_next_segment_time(self):
+        """Sets the time that the next segment should be ready to download"""
         duration = self._mpd_data['segment_length']
         self._next_segment_time = datetime.now() + timedelta(milliseconds=duration)
 
-    def _get_time_before_next_stream(self):
+    def _get_time_before_next_segment(self):
         """Time before the next segment is available, in seconds"""
         delay = self._next_segment_time - datetime.now()
         delay_in_seconds = delay.total_seconds()
@@ -102,8 +103,8 @@ class LiveStream():
             await self._initialise()
 
         # Get current wait time and set timer for next download
-        wait_time = self._get_time_before_next_stream()
-        self._set_next_stream_time()
+        wait_time = self._get_time_before_next_segment()
+        self._set_next_segment_time()
 
         _LOGGER.debug(
             'Sleeping for %s seconds before grabbing next live stream segment.', wait_time)
@@ -150,4 +151,4 @@ class LiveStream():
         self._initialised = True
 
         # Delay stream until one segment is ready
-        self._set_next_stream_time()
+        self._set_next_segment_time()

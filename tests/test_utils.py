@@ -4,8 +4,8 @@ import sys
 import unittest
 import asyncio
 from logi_circle.utils import (
-    _get_session_cookie, _handle_response, _clean_cache, _exists_cache, _save_cache, _read_cache)
-from logi_circle.const import CACHE_ATTRS, COOKIE_NAME
+    _get_session_cookie, _handle_response, _model_number_to_name, _clean_cache, _exists_cache, _save_cache, _read_cache)
+from logi_circle.const import CACHE_ATTRS, COOKIE_NAME, MODEL_GEN_1, MODEL_GEN_2, MODEL_NAME_GEN_1, MODEL_NAME_GEN_2_WIRED, MODEL_NAME_GEN_2_WIRELESS, MODEL_NAME_UNKNOWN
 from logi_circle.exception import BadSession
 
 CACHE = 'tests/cache.db'
@@ -88,6 +88,17 @@ class TestUtils(unittest.TestCase):
         loop = asyncio.new_event_loop()
         loop.run_until_complete(run_test())
         loop.close()
+
+    def test_model_number_to_name(self):
+        """Test _model_number_to_name method."""
+        self.assertEqual(_model_number_to_name(MODEL_GEN_1), MODEL_NAME_GEN_1)
+        self.assertEqual(_model_number_to_name(MODEL_GEN_2, 50),
+                         MODEL_NAME_GEN_2_WIRELESS)
+        self.assertEqual(_model_number_to_name(
+            MODEL_GEN_2, -1), MODEL_NAME_GEN_2_WIRED)
+        self.assertEqual(_model_number_to_name(
+            MODEL_GEN_2), MODEL_NAME_GEN_2_WIRED)
+        self.assertEqual(_model_number_to_name('A1234'), MODEL_NAME_UNKNOWN)
 
     def test_init_clean_cache(self):
         """Test _clean_cache method."""

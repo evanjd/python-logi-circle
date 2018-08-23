@@ -162,10 +162,10 @@ loop.run_until_complete(future)
 ```python
 async def disable_streaming_all():
     for camera in await logi_api.cameras:
-        if camera.is_streaming:
-            await camera.set_streaming_mode(False)
+        if camera.streaming_mode != 'off':
+            await camera.set_streaming_mode('off')
             print('%s is now %s.' %
-                  (camera.name, 'on' if camera.is_streaming else 'off'))
+                  (camera.name, camera.streaming_mode))
         else:
             print('%s is already off.' % (camera.name))
     await logi_api.logout()
@@ -229,6 +229,10 @@ loop.close()
   - Live streams will now automatically append to an existing file (instead of overwriting)
   - Added a bunch of new camera properties
   - Added support for setting privacy mode, LED status, speaker status, speaker volume, microphone status and microphone gain
+- 0.1.2
+  - Removed `is_streaming` property as I've discovered this is not a binary sensor for 2nd gen cameras. Replaced with `streaming_mode`.
+  - `set_streaming_mode` now accepts a string instead a boolean.
+  - Added `model_name` property.
 
 ## Meta
 

@@ -42,3 +42,11 @@ VALIDATE_ENDPOINT = '/accounts/self'
 JPEG_CONTENT_TYPE = 'image/jpeg'
 VIDEO_CONTENT_TYPE = 'application/octet-stream'
 LIVESTREAM_XMLNS = 'urn:mpeg:dash:schema:mpd:2011'
+
+# Model to product mapping
+MODEL_GEN_1 = 'A1533'
+MODEL_GEN_2 = 'V-R0008'
+MODEL_NAME_GEN_1 = 'Logi Circle 1st generation'
+MODEL_NAME_GEN_2_WIRED = 'Logi Circle 2nd generation - wired'
+MODEL_NAME_GEN_2_WIRELESS = 'Logi Circle 2nd generation - wireless'
+MODEL_NAME_UNKNOWN = 'Unknown'

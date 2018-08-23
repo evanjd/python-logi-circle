@@ -33,14 +33,16 @@ class TestCamera(LogiUnitTestBase):
                     camera.name, 'Mock Camera', 'Name mismatch')
                 self.assertTrue(
                     camera.is_connected, 'Camera is_connected mismatch')
-                self.assertTrue(
-                    camera.is_streaming, 'Camera is_streaming mismatch')
+                self.assertEqual(camera.streaming_mode, 'on',
+                                 'Camera streaming_mode mismatch')
                 self.assertFalse(
                     camera.is_charging, 'Camera is_charging mismatch')
                 self.assertEqual(
                     camera.battery_level, 95, 'Battery level mismatch')
                 self.assertEqual(
-                    camera.model, 'A1234', 'Model mismatch')
+                    camera.model, 'A1533', 'Model mismatch')
+                self.assertEqual(
+                    camera.model_name, 'Logi Circle 1st generation', 'Model name mismatch')
                 self.assertEqual(
                     camera.node_id, 'node-mocked.video.logi.com', 'Node ID mismatch')
                 self.assertEqual(
@@ -198,17 +200,17 @@ class TestCamera(LogiUnitTestBase):
                 # Perform implicit login, and get camera
                 camera = (await logi.cameras)[0]
                 # Streaming mode is on (as per fixture)
-                self.assertTrue(
-                    camera.is_streaming, 'Camera is_streaming mismatch')
+                self.assertEqual(camera.streaming_mode, 'on',
+                                 'Camera streaming_mode mismatch')
                 # Disable streaming
-                await camera.set_streaming_mode(False)
+                await camera.set_streaming_mode('off')
                 # Streaming mode is off
-                self.assertFalse(camera.is_streaming,
+                self.assertEqual(camera.streaming_mode, 'off',
                                  'Camera streaming is on after turning off')
                 # Enable streaming
-                await camera.set_streaming_mode(True)
+                await camera.set_streaming_mode('on')
                 # Streaming mode is on
-                self.assertTrue(camera.is_streaming,
-                                'Camera streaming is off after turning on')
+                self.assertEqual(camera.streaming_mode, 'on',
+                                 'Camera streaming is off after turning on')
 
         self.loop.run_until_complete(run_test())
