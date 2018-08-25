@@ -4,13 +4,13 @@
 import logging
 from datetime import datetime
 import pytz
+from aiohttp.client_exceptions import ClientResponseError
 from .const import (
     PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE)
 from .activity import Activity
 from .live_stream import LiveStream
 from .utils import _stream_to_file, _model_number_to_name
 from .exception import UnexpectedContentType
-from aiohttp.client_exceptions import ClientResponseError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class Camera():
         self._local_tz = pytz.timezone(self._attrs['timezone'])
 
     async def update(self):
-        """Poll API for changes to camera properties"""
+        """Poll API for changes to camera properties."""
         _LOGGER.debug('Updating properties for camera %s', self.name)
 
         url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
@@ -157,13 +157,13 @@ class Camera():
 
     @property
     def snapshot_url(self):
-        """Returns the URL that provides a near realtime JPEG snapshot of what the camera sees"""
+        """Returns the URL that provides a near realtime JPEG snapshot of what the camera sees."""
         url = '%s://%s/api%s/%s%s' % (PROTOCOL, self.node_id,
                                       ACCESSORIES_ENDPOINT, self.id, IMAGES_ENDPOINT)
         return url
 
     async def get_snapshot_image(self, filename=None):
-        """Downloads a near realtime JPEG snapshot for this camera"""
+        """Downloads a near realtime JPEG snapshot for this camera."""
 
         # Update camera before retrieving snapshot as node ID changes frequently
         await self.update()
@@ -216,7 +216,7 @@ class Camera():
         await self._set_config(prop='privacyMode', internal_prop='privacy_mode', value=status, value_type=bool)
 
     async def _set_config(self, prop, internal_prop, value, value_type, internal_value=None):
-        """Internal method for updating the camera's configuration"""
+        """Internal method for updating the camera's configuration."""
         if not isinstance(value, value_type):
             raise ValueError('%s expected for status argument' % (value_type))
 
@@ -266,7 +266,7 @@ class Camera():
 
     @property
     def streaming_mode(self):
-        """Return streaming mode for camera (eg. off = 'soft off', on = 'soft on', onAlert = 'streams when motion is detected')."""
+        """Return streaming mode for camera (soft "on")."""
         return self._attrs.get('streaming_mode')
 
     @property
