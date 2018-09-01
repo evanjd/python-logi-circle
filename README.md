@@ -8,7 +8,6 @@
 [![Coverage Status][coverage-badge]][coverage-url]
 [![Open Issues][open-issues-badge]][open-issues-url]
 
-
 This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects. The goal is to expose most of the functionality from Logi's 1st party applications, allowing integration of those features into other projects.
 
 Note that the API this project is based on is not open, and therefore could change/break at any time.
@@ -50,6 +49,7 @@ $ pip install \
   - Battery %
   - Charging status
   - Model
+  - Model type (eg. 1st gen, 2nd gen wired, etc)
   - Connected Wifi SSID
   - Signal strength %
   - IP address
@@ -73,8 +73,6 @@ $ pip install \
 - Speaker support (maybe)
 
 ## Usage example
-
-As this project is still in its early days, expect breaking changes!
 
 #### Setup and authenticate:
 
@@ -189,6 +187,7 @@ async def play_with_props():
         print('%s: %s%% battery remaining' %
               (camera.name, camera.battery_level))
         print('%s: Model number is %s' % (camera.name, camera.model))
+        print('%s: Model type is %s' % (camera.name, camera.model_type))
         print('%s: Signal strength is %s%% (%s)' % (
             camera.name, camera.signal_strength_percentage, camera.signal_strength_category))
         print('%s: last activity was at %s and lasted for %s seconds.' % (
@@ -236,6 +235,9 @@ loop.close()
   - Removed `is_streaming` property as I've discovered this is not a binary sensor for 2nd gen cameras. Replaced with `streaming_mode`.
   - `set_streaming_mode` now accepts a string instead a boolean.
   - Added `model_name` property.
+- 0.1.3
+  - Renamed `model_name` to `model_type` to better reflect what the property reports.
+  - Added rudimentary feature detection, exposed via `supported_features` and `supports_feature` methods and derived from model type.
 
 ## Meta
 
@@ -250,7 +252,7 @@ Distributed under the MIT license. See `LICENSE` for more information.
 
 ## Contributing
 
-They're very welcome, every little bit helps! I'm especially keen for help supporting devices that I do not own and cannot test with (eg. Circle 2 indoor & outdoor cameras).
+They're very welcome, every little bit helps! I'm especially keen for help supporting devices that I do not own and cannot test with (eg. Circle 2 wired and wireless cameras).
 
 1. Fork it (<https://github.com/evanjd/python-logi-circle/fork>).
 2. Create your feature branch (`git checkout -b feature/fooBar`).

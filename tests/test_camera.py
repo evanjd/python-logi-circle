@@ -42,7 +42,7 @@ class TestCamera(LogiUnitTestBase):
                 self.assertEqual(
                     camera.model, 'A1533', 'Model mismatch')
                 self.assertEqual(
-                    camera.model_name, 'Logi Circle 1st generation', 'Model name mismatch')
+                    camera.model_type, '1st gen', 'Model name mismatch')
                 self.assertEqual(
                     camera.node_id, 'node-mocked.video.logi.com', 'Node ID mismatch')
                 self.assertEqual(

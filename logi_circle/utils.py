@@ -8,7 +8,8 @@ try:
 except ImportError:
     import pickle
 from logi_circle.const import (
-    CACHE_ATTRS, COOKIE_NAME, MODEL_GEN_1, MODEL_GEN_2, MODEL_NAME_GEN_1, MODEL_NAME_GEN_2_WIRED, MODEL_NAME_GEN_2_WIRELESS, MODEL_NAME_UNKNOWN)
+    CACHE_ATTRS, COOKIE_NAME, MODEL_GEN_1, MODEL_GEN_2, MODEL_TYPE_GEN_1,
+    MODEL_TYPE_GEN_2_WIRED, MODEL_TYPE_GEN_2_WIRELESS, MODEL_TYPE_UNKNOWN)
 from .exception import BadSession
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,15 +49,15 @@ async def _stream_to_file(stream, filename, open_mode='wb'):
             file_handle.write(chunk)
 
 
-def _model_number_to_name(model, battery_level=-1):
+def _model_number_to_type(model, battery_level=-1):
     """Converts the model number to a friendly product name."""
-    if (model == MODEL_GEN_1):
-        return MODEL_NAME_GEN_1
-    if (model == MODEL_GEN_2):
-        if (battery_level < 0):
-            return MODEL_NAME_GEN_2_WIRED
-        return MODEL_NAME_GEN_2_WIRELESS
-    return MODEL_NAME_UNKNOWN
+    if model == MODEL_GEN_1:
+        return MODEL_TYPE_GEN_1
+    if model == MODEL_GEN_2:
+        if battery_level < 0:
+            return MODEL_TYPE_GEN_2_WIRED
+        return MODEL_TYPE_GEN_2_WIRELESS
+    return MODEL_TYPE_UNKNOWN
 
 
 def _write_to_file(data, filename):

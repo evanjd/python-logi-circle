@@ -6,10 +6,10 @@ from datetime import datetime
 import pytz
 from aiohttp.client_exceptions import ClientResponseError
 from .const import (
-    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE)
+    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE, FEATURES)
 from .activity import Activity
 from .live_stream import LiveStream
-from .utils import _stream_to_file, _model_number_to_name
+from .utils import _stream_to_file, _model_number_to_type
 from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
@@ -82,6 +82,14 @@ class Camera():
             url=url, method='GET')
 
         self._set_attributes(camera)
+
+    def supported_features(self):
+        """Returns an array of supported sensors for this camera."""
+        return FEATURES[self.model_type]
+
+    def supports_feature(self, feature):
+        """Returns a bool indicating whether a given sensor is implemented for this camera."""
+        return True if feature in self.supported_features() else False
 
     async def query_activity_history(self, property_filter=None, date_filter=None, date_operator='<=', limit=100):
         """Filter the activity history, returning Activity objects for any matching result."""
@@ -289,12 +297,12 @@ class Camera():
         return self._attrs.get('model')
 
     @property
-    def model_name(self):
-        """Return product name, derived from other camera properties."""
+    def model_type(self):
+        """Return product type, derived from other camera properties."""
         if isinstance(self.battery_level, int):
-            return _model_number_to_name(self.model, self.battery_level)
+            return _model_number_to_type(self.model, self.battery_level)
         else:
-            return _model_number_to_name(self.model)
+            return _model_number_to_type(self.model)
 
     @property
     def firmware(self):

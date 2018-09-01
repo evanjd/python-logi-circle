@@ -46,7 +46,17 @@ LIVESTREAM_XMLNS = 'urn:mpeg:dash:schema:mpd:2011'
 # Model to product mapping
 MODEL_GEN_1 = 'A1533'
 MODEL_GEN_2 = 'V-R0008'
-MODEL_NAME_GEN_1 = 'Logi Circle 1st generation'
-MODEL_NAME_GEN_2_WIRED = 'Logi Circle 2nd generation - wired'
-MODEL_NAME_GEN_2_WIRELESS = 'Logi Circle 2nd generation - wireless'
-MODEL_NAME_UNKNOWN = 'Unknown'
+MODEL_TYPE_GEN_1 = '1st gen'
+MODEL_TYPE_GEN_2_WIRED = '2nd gen - wired'
+MODEL_TYPE_GEN_2_WIRELESS = '2nd gen - wireless'
+MODEL_TYPE_UNKNOWN = 'Unknown'
+
+# Feature mapping
+FEATURES = {
+    MODEL_TYPE_GEN_1: ['is_charging', 'battery_level', 'last_activity_time', 'privacy_mode',
+                       'signal_strength_percentage', 'signal_strength_category'],
+    MODEL_TYPE_GEN_2_WIRED: ['privacy_mode', 'signal_strength_percentage', 'signal_strength_category'],
+    MODEL_TYPE_GEN_2_WIRELESS: ['is_charging', 'battery_level', 'last_activity_time', 'privacy_mode',
+                                'signal_strength_percentage', 'signal_strength_category'],
+    MODEL_TYPE_UNKNOWN: ['last_activity_time']
+}
