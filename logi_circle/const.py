@@ -55,7 +55,7 @@ MODEL_TYPE_UNKNOWN = 'Unknown'
 FEATURES = {
     MODEL_TYPE_GEN_1: ['is_charging', 'battery_level', 'last_activity_time', 'privacy_mode',
                        'signal_strength_percentage', 'signal_strength_category'],
-    MODEL_TYPE_GEN_2_WIRED: ['privacy_mode', 'signal_strength_percentage', 'signal_strength_category'],
+    MODEL_TYPE_GEN_2_WIRED: ['last_activity_time', 'privacy_mode', 'signal_strength_percentage', 'signal_strength_category'],
     MODEL_TYPE_GEN_2_WIRELESS: ['is_charging', 'battery_level', 'last_activity_time', 'privacy_mode',
                                 'signal_strength_percentage', 'signal_strength_category'],
     MODEL_TYPE_UNKNOWN: ['last_activity_time']

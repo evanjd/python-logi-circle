@@ -10,7 +10,7 @@ def readme():
 setup(
     name='logi_circle',
     packages=['logi_circle'],
-    version='0.1.3',
+    version='0.1.4',
     description='A Python library to communicate with Logi Circle cameras',
     long_description=readme(),
     author='Evan Bruhn',

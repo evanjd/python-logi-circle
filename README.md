@@ -238,6 +238,8 @@ loop.close()
 - 0.1.3
   - Renamed `model_name` to `model_type` to better reflect what the property reports.
   - Added rudimentary feature detection, exposed via `supported_features` and `supports_feature` methods and derived from model type.
+- 0.1.4
+  - Fixed missing `last_activity_time` sensor on 2nd gen wired cameras.
 
 ## Meta
 
