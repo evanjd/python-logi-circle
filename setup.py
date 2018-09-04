@@ -3,7 +3,7 @@ from setuptools import setup
 
 
 def readme():
-    with open('README.md') as desc:
+    with open('README.md', encoding='utf-8') as desc:
         return desc.read()
 
 
@@ -13,6 +13,7 @@ setup(
     version='0.1.4',
     description='A Python library to communicate with Logi Circle cameras',
     long_description=readme(),
+    long_description_content_type='text/markdown',
     author='Evan Bruhn',
     author_email='evan.bruhn@gmail.com',
     url='https://github.com/evanjd/python-logi-circle',
