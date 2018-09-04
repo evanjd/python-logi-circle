@@ -1,0 +1,17 @@
+<MPD xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns="urn:mpeg:dash:schema:mpd:2011" xsi:schemaLocation="urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd" profiles="urn:mpeg:dash:profile:isoff-live:2011" type="dynamic" minBufferTime="PT0.1S" suggestedPresentationDelay="PT0S" publishTime="2018-01-01T00:30:00Z" mediaPresentationDuration="P1DT0H0M0.000S" availabilityStartTime="2018-01-01T00:30:00Z" minimumUpdatePeriod="PT12H">
+    <BaseURL>https://node-mocked-2.video.logi.com:443/api/accessories/mock-camera/</BaseURL>
+    <Period id="000001" start="PT0S">
+        <AdaptationSet mimeType="video/mp4" codecs="avc1.4d401f,mp4a.40.2" segmentAlignment="true" maxWidth="1280" maxHeight="720" maxFrameRate="30/1" par="16:9">
+            <ContentComponent id="1" contentType="video"/>
+            <ContentComponent id="2" contentType="audio"/>
+            <SegmentTemplate timescale="1000" media="clip_000001_$Number$.mp4?requestId=abc" startNumber="1" duration="4500" presentationTimeOffset="0" initialization="init.mp4?requestId=abc"/>
+            <Representation id="1" width="1280" height="720" frameRate="30/1" sar="1:1" audioSamplingRate="32000" startWithSAP="1" bandwidth="530000">
+                <SubRepresentation contentComponent="1" bandwidth="500000" codecs="avc1.4d401f"/>
+                <SubRepresentation contentComponent="2" bandwidth="30000" codecs="mp4a.40.2"/>
+                <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="1"/>
+            </Representation>
+        </AdaptationSet>
+    </Period>
+    <UTCTiming schemeIdUri="urn:mpeg:dash:utc:http-head:2014" value="https://node-mocked-2.video.logi.com:443/api/accessories/mock-camera/time.txt"/>
+</MPD>

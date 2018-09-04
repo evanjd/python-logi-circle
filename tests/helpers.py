@@ -3,8 +3,8 @@ import os
 
 
 def get_fixture_name(filename):
-    """Strips .json from filename when building fixtures dict key"""
-    return filename.replace('.json', '')
+    """Strips extension from filename when building fixtures dict key"""
+    return os.path.splitext(filename)[0]
 
 
 def get_fixtures():
@@ -12,11 +12,8 @@ def get_fixtures():
     fixtures = {}
     path = os.path.join(os.path.dirname(__file__), 'fixtures')
     for filename in os.listdir(path):
-        if filename.endswith(".json"):
-            with open(os.path.join(path, filename)) as fdp:
-                fixture = fdp.read()
-                fixtures[get_fixture_name(filename)] = fixture
-            continue
-        else:
+        with open(os.path.join(path, filename)) as fdp:
+            fixture = fdp.read()
+            fixtures[get_fixture_name(filename)] = fixture
             continue
     return fixtures
