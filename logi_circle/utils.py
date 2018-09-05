@@ -2,6 +2,7 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import os
+import subprocess
 import logging
 try:
     import cPickle as pickle
@@ -58,6 +59,18 @@ def _model_number_to_type(model, battery_level=-1):
             return MODEL_TYPE_GEN_2_WIRED
         return MODEL_TYPE_GEN_2_WIRELESS
     return MODEL_TYPE_UNKNOWN
+
+
+def _get_file_duration(file):
+    """Get the duration in milliseconds of a video using ffprobe."""
+    cmd = 'ffprobe -i {} -show_entries format=duration -v quiet -of csv="p=0"'.format(
+        file)
+    output = subprocess.check_output(
+        cmd,
+        shell=True,
+        stderr=subprocess.STDOUT
+    )
+    return int(float(output) * 1000)
 
 
 def _write_to_file(data, filename):

@@ -4,12 +4,13 @@
 import logging
 from datetime import datetime
 import pytz
+from subprocess import CalledProcessError
 from aiohttp.client_exceptions import ClientResponseError
 from .const import (
     PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE, FEATURES)
 from .activity import Activity
 from .live_stream import LiveStream
-from .utils import _stream_to_file, _model_number_to_type
+from .utils import _stream_to_file, _model_number_to_type, _get_file_duration
 from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
@@ -162,6 +163,34 @@ class Camera():
         except IndexError:
             # If there's no activity history for this camera at all.
             return None
+
+    async def record_stream(self, filename, duration):
+        """Downloads the live stream into a specific file for a specific duration"""
+        live_stream = self.live_stream
+
+        # Unfortunately, the Logi API does not correctly report the segment length.
+        # Worse still, segments lengths can fluctuate between requests.
+        # We need to check the duration of the file each iteration and abort the loop once the desired duration is reached.
+        downloaded_duration = 0
+        max_duration = duration.total_seconds() * 1000
+        failed_segment_requests = 0
+        while downloaded_duration < max_duration:
+            # Bail out of the loop if too many segments fail
+            if failed_segment_requests > 3:
+                raise RuntimeError(
+                    'Live stream video length could not be evaluated after 3 attempts.')
+
+            await live_stream.get_segment(filename=filename, append=True)
+            try:
+                file_duration = _get_file_duration(filename)
+                downloaded_duration = file_duration
+                _LOGGER.debug('Downloaded %sms of %sms of live stream to %s.',
+                              file_duration, max_duration, filename)
+            except (CalledProcessError, ValueError):
+                # Stream may not be ready yet.
+                _LOGGER.warning(
+                    'Could not evaluate length of live stream segment.')
+                failed_segment_requests += 1
 
     @property
     def snapshot_url(self):

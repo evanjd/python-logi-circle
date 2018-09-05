@@ -115,12 +115,12 @@ loop.close()
 ```python
 async def get_livestream():
     camera = (await logi_api.cameras)[0]
-    live_stream = camera.live_stream
+    filename = '%s-livestream.mp4' % (camera.name)
 
-    while True:
-        # Keep appending to live stream MP4 until interrupted
-        filename = '%s-livestream.mp4' % (camera.name)
-        await live_stream.get_segment(filename=filename,append=True)
+    # Grab 1 minute of footage from live stream
+    await camera.record_stream(filename='test.mp4', duration=timedelta(minutes=1))
+
+    await logi_api.logout()
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(get_livestream())
