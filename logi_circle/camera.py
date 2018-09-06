@@ -2,15 +2,18 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
+import os
 from datetime import datetime
-import pytz
 from subprocess import CalledProcessError
+from tempfile import NamedTemporaryFile
+import pytz
 from aiohttp.client_exceptions import ClientResponseError
 from .const import (
     PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE, FEATURES)
 from .activity import Activity
 from .live_stream import LiveStream
-from .utils import _stream_to_file, _model_number_to_type, _get_file_duration
+from .utils import (_stream_to_file, _write_to_file, _delete_quietly, _model_number_to_type,
+    _get_file_duration, _get_first_frame_from_video)
 from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
@@ -225,6 +228,36 @@ class Camera():
             _LOGGER.error('Expected content-type %s, got %s when retrieving still image for camera %s',
                           JPEG_CONTENT_TYPE, image.content_type, self.name)
             raise UnexpectedContentType()
+
+    async def get_livestream_image(self, filename=None):
+        """Downloads a realtime JPEG snapshot for this camera, generated from the camera's livestream."""
+
+        live_stream = self.live_stream
+
+        # Get an empty temp file to store our live stream segment
+        segment_temp_file = NamedTemporaryFile(delete=False)
+        segment_temp_file.close()
+        segment_temp_file_path = segment_temp_file.name
+
+        image = None
+
+        try:
+            # Download first segment from livestream
+            await live_stream.get_segment(filename=segment_temp_file_path)
+
+            # Get JPEG from FFMPEG
+            image = _get_first_frame_from_video(segment_temp_file_path)
+
+            # Delete temp file
+            os.remove(segment_temp_file_path)
+        except (CalledProcessError, ValueError):
+            _delete_quietly(segment_temp_file_path)
+            raise
+
+        if filename:
+            _write_to_file(data=image, filename=filename)
+        else:
+            return image
 
     async def set_streaming_mode(self, status):
         """Sets streaming mode for this camera."""

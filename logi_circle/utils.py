@@ -50,6 +50,20 @@ async def _stream_to_file(stream, filename, open_mode='wb'):
             file_handle.write(chunk)
 
 
+def _write_to_file(data, filename, open_mode='wb'):
+    """Write binary object directly to file"""
+    with open(filename, open_mode) as file_handle:
+        file_handle.write(data)
+
+
+def _delete_quietly(filename):
+    """Deletes a file which may or may not exist."""
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+
+
 def _model_number_to_type(model, battery_level=-1):
     """Converts the model number to a friendly product name."""
     if model == MODEL_GEN_1:
@@ -71,6 +85,19 @@ def _get_file_duration(file):
         stderr=subprocess.STDOUT
     )
     return int(float(output) * 1000)
+
+
+def _get_first_frame_from_video(file):
+    """Returns the first frame of a video as a binary object using ffmpeg."""
+    cmd = 'ffmpeg -i {} -vf "select=eq(n\,0)" -q:v 3 -f singlejpeg -'.format(
+        file)
+    output = subprocess.check_output(
+        cmd,
+        shell=True,
+        stderr=subprocess.DEVNULL
+    )
+
+    return output
 
 
 def _write_to_file(data, filename):
