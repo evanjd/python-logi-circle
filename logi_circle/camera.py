@@ -13,7 +13,7 @@ from .const import (
 from .activity import Activity
 from .live_stream import LiveStream
 from .utils import (_stream_to_file, _write_to_file, _delete_quietly, _model_number_to_type,
-    _get_file_duration, _get_first_frame_from_video)
+                    _get_file_duration, _get_first_frame_from_video, _truncate_video, requires_ffmpeg)
 from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
@@ -167,7 +167,8 @@ class Camera():
             # If there's no activity history for this camera at all.
             return None
 
-    async def record_stream(self, filename, duration):
+    @requires_ffmpeg
+    async def record_livestream(self, filename, duration):
         """Downloads the live stream into a specific file for a specific duration"""
         live_stream = self.live_stream
 
@@ -194,6 +195,17 @@ class Camera():
                 _LOGGER.warning(
                     'Could not evaluate length of live stream segment.')
                 failed_segment_requests += 1
+
+        # Truncate video to match desired duration
+        temp_file = '%s.tmp' % (filename)
+        _LOGGER.debug('Trimming trailing %sms from video, using %s as temp file.', downloaded_duration - max_duration, temp_file)
+        try:
+            _truncate_video(filename, temp_file, duration.total_seconds())
+            os.remove(filename)
+            os.rename(temp_file, filename)
+        except OSError:
+            _delete_quietly(temp_file)
+            raise
 
     @property
     def snapshot_url(self):
@@ -229,6 +241,7 @@ class Camera():
                           JPEG_CONTENT_TYPE, image.content_type, self.name)
             raise UnexpectedContentType()
 
+    @requires_ffmpeg
     async def get_livestream_image(self, filename=None):
         """Downloads a realtime JPEG snapshot for this camera, generated from the camera's livestream."""
 

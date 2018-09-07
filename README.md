@@ -118,7 +118,7 @@ async def get_livestream():
     filename = '%s-livestream.mp4' % (camera.name)
 
     # Grab 1 minute of footage from live stream
-    await camera.record_stream(filename='test.mp4', duration=timedelta(minutes=1))
+    await camera.record_livestream(filename=filename, duration=timedelta(minutes=1))
 
     await logi_api.logout()
 
@@ -240,6 +240,8 @@ loop.close()
   - Added rudimentary feature detection, exposed via `supported_features` and `supports_feature` methods and derived from model type.
 - 0.1.4
   - Fixed missing `last_activity_time` sensor on 2nd gen wired cameras.
+- 0.1.5
+  - Added `get_livestream_image` and `record_livestream` methods to camera object, allowing snapshots (images) and videos of a specified length to be recorded from the camera's livestream (both requiring ffmpeg)
 
 ## Meta
 
@@ -256,12 +258,13 @@ Distributed under the MIT license. See `LICENSE` for more information.
 
 They're very welcome, every little bit helps! I'm especially keen for help supporting devices that I do not own and cannot test with (eg. Circle 2 wired and wireless cameras).
 
-1. Fork it (<https://github.com/evanjd/python-logi-circle/fork>).
-2. Create your feature branch (`git checkout -b feature/fooBar`).
-3. Commit your changes (`git commit -am 'Add some fooBar'`).
-4. Add/update tests if needed, then run `tox` to confirm no test failures.
-5. Push to the branch (`git push origin feature/fooBar`).
-6. Create a new pull request!
+1. Raise an issue with your feature request or bug before starting work.
+2. Fork it (<https://github.com/evanjd/python-logi-circle/fork>).
+3. Create your feature branch (`git checkout -b feature/fooBar`).
+4. Commit your changes (`git commit -am 'Add some fooBar'`).
+5. Add/update tests if needed, then run `tox` to confirm no test failures.
+6. Push to the branch (`git push origin feature/fooBar`).
+7. Create a new pull request!
 
 <!-- Markdown link & img dfn's -->
 
