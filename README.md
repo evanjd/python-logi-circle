@@ -49,7 +49,8 @@ $ pip install \
   - Battery %
   - Charging status
   - Model
-  - Model type (eg. 1st gen, 2nd gen wired, etc)
+  - Model generation (eg. 1st gen, 2nd gen)
+  - Mount (eg. Wired, Wireless)
   - Connected Wifi SSID
   - Signal strength %
   - IP address
@@ -163,10 +164,9 @@ loop.run_until_complete(future)
 ```python
 async def disable_streaming_all():
     for camera in await logi_api.cameras:
-        if camera.streaming_mode != 'off':
-            await camera.set_streaming_mode('off')
-            print('%s is now %s.' %
-                  (camera.name, camera.streaming_mode))
+        if camera.streaming_mode is True:
+            await camera.set_streaming_mode(False)
+            print('%s is now off.' % (camera.name))
         else:
             print('%s is already off.' % (camera.name))
     await logi_api.logout()
@@ -244,8 +244,8 @@ loop.close()
 - 0.1.5
   - Added `get_livestream_image` and `record_livestream` methods to camera object, allowing snapshots (images) and videos of a specified length to be recorded from the camera's livestream (both requiring ffmpeg)
 - 0.1.6
- - `set_streaming_mode` now accepts a boolean instead of string.
- - Removed `model_type` property, replaced with `mount` and `model_generation` properties.
+  - `set_streaming_mode` now accepts a boolean instead of string.
+  - Removed `model_type` property, replaced with `mount` and `model_generation` properties.
 
 ## Meta
 
