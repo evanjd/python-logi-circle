@@ -9,11 +9,13 @@ from tempfile import NamedTemporaryFile
 import pytz
 from aiohttp.client_exceptions import ClientResponseError
 from .const import (
-    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE, FEATURES)
+    PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE, FEATURES,
+    MODEL_GEN_1, MODEL_GEN_2, MODEL_GEN_1_NAME, MODEL_GEN_2_NAME, MODEL_GEN_UNKNOWN_NAME,
+    MODEL_GEN_1_MOUNT, MODEL_GEN_2_MOUNT_WIRED, MODEL_GEN_2_MOUNT_WIRELESS)
 from .activity import Activity
 from .live_stream import LiveStream
-from .utils import (_stream_to_file, _write_to_file, _delete_quietly, _model_number_to_type,
-                    _get_file_duration, _get_first_frame_from_video, _truncate_video, requires_ffmpeg)
+from .utils import (_stream_to_file, _write_to_file, _delete_quietly, _get_file_duration,
+                    _get_first_frame_from_video, _truncate_video, requires_ffmpeg)
 from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,7 +48,7 @@ class Camera():
 
         # Optional attributes
         self._attrs['streaming_mode'] = config.get(
-            'streamingMode', 'off')
+            'streamingMode', 'off') != 'off'
         self._attrs['timezone'] = config.get('timeZone', 'UTC')
         self._attrs['battery_level'] = config.get('batteryLevel', None)
         self._attrs['is_charging'] = config.get('batteryCharging', None)
@@ -89,7 +91,7 @@ class Camera():
 
     def supported_features(self):
         """Returns an array of supported sensors for this camera."""
-        return FEATURES[self.model_type]
+        return FEATURES[self.mount]
 
     def supports_feature(self, feature):
         """Returns a bool indicating whether a given sensor is implemented for this camera."""
@@ -174,7 +176,8 @@ class Camera():
 
         # Unfortunately, the Logi API does not correctly report the segment length.
         # Worse still, segments lengths can fluctuate between requests.
-        # We need to check the duration of the file each iteration and abort the loop once the desired duration is reached.
+        # We need to check the duration of the file each iteration and abort
+        # the loop once the desired duration is reached.
         downloaded_duration = 0
         max_duration = duration.total_seconds() * 1000
         failed_segment_requests = 0
@@ -198,7 +201,8 @@ class Camera():
 
         # Truncate video to match desired duration
         temp_file = '%s.tmp' % (filename)
-        _LOGGER.debug('Trimming trailing %sms from video, using %s as temp file.', downloaded_duration - max_duration, temp_file)
+        _LOGGER.debug('Trimming trailing %sms from video, using %s as temp file.',
+                      downloaded_duration - max_duration, temp_file)
         try:
             _truncate_video(filename, temp_file, duration.total_seconds())
             os.remove(filename)
@@ -274,20 +278,34 @@ class Camera():
 
     async def set_streaming_mode(self, status):
         """Sets streaming mode for this camera."""
-        await self._set_config(prop='streamingMode', internal_prop='streaming_mode', value=status, value_type=str)
+        if not isinstance(status, bool):
+            raise ValueError('bool expected for status argument')
+        if status is True:
+            # Gen 1 cameras expect 'on', gen 2 cameras expect 'onAlert'
+            if self.model == MODEL_GEN_1:
+                await self._set_config(prop='streamingMode', internal_prop='streaming_mode',
+                                       value='on', internal_value=True, value_type=str)
+            else:
+                await self._set_config(prop='streamingMode', internal_prop='streaming_mode',
+                                       value='onAlert', internal_value=True, value_type=str)
+        else:
+            await self._set_config(prop='streamingMode', internal_prop='streaming_mode',
+                                   value='off', internal_value=False, value_type=str)
 
     async def set_microphone(self, status=None, gain=None):
         """Sets microphone status and/or gain."""
-        if status:
-            await self._set_config(prop='microphoneOn', internal_prop='microphone_on', value=status, value_type=bool)
-        if gain:
-            await self._set_config(prop='microphoneGain', internal_prop='microphone_gain', value=gain, value_type=int)
+        if status is not None:
+            await self._set_config(prop='microphoneOn', internal_prop='microphone_on',
+                                   value=status, value_type=bool)
+        if gain is not None:
+            await self._set_config(prop='microphoneGain', internal_prop='microphone_gain',
+                                   value=gain, value_type=int)
 
     async def set_speaker(self, status=None, volume=None):
         """Sets speaker status and/or volume."""
-        if status:
+        if status is not None:
             await self._set_config(prop='speakerOn', internal_prop='speaker_on', value=status, value_type=bool)
-        if volume:
+        if volume is not None:
             await self._set_config(prop='speakerVolume', internal_prop='speaker_volume', value=volume, value_type=int)
 
     async def set_led(self, status):
@@ -372,12 +390,26 @@ class Camera():
         return self._attrs.get('model')
 
     @property
-    def model_type(self):
+    def model_generation(self):
         """Return product type, derived from other camera properties."""
-        if isinstance(self.battery_level, int):
-            return _model_number_to_type(self.model, self.battery_level)
-        else:
-            return _model_number_to_type(self.model)
+        if self.model == MODEL_GEN_1:
+            return MODEL_GEN_1_NAME
+        if self.model == MODEL_GEN_2:
+            return MODEL_GEN_2_NAME
+        return MODEL_GEN_UNKNOWN_NAME
+
+    @property
+    def mount(self):
+        """Returns the camera mount type."""
+        if self.model == MODEL_GEN_1:
+            return MODEL_GEN_1_MOUNT
+        if self.model == MODEL_GEN_2:
+            if isinstance(self.battery_level, int):
+                if self.battery_level < 0:
+                    return MODEL_GEN_2_MOUNT_WIRED
+                return MODEL_GEN_2_MOUNT_WIRELESS
+            return MODEL_GEN_2_MOUNT_WIRED
+        return MODEL_GEN_UNKNOWN_NAME
 
     @property
     def firmware(self):

@@ -10,8 +10,7 @@ try:
 except ImportError:
     import pickle
 from logi_circle.const import (
-    CACHE_ATTRS, COOKIE_NAME, MODEL_GEN_1, MODEL_GEN_2, MODEL_TYPE_GEN_1,
-    MODEL_TYPE_GEN_2_WIRED, MODEL_TYPE_GEN_2_WIRELESS, MODEL_TYPE_UNKNOWN)
+    CACHE_ATTRS, COOKIE_NAME)
 from .exception import BadSession
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,17 +63,6 @@ def _delete_quietly(filename):
         os.remove(filename)
     except OSError:
         pass
-
-
-def _model_number_to_type(model, battery_level=-1):
-    """Converts the model number to a friendly product name."""
-    if model == MODEL_GEN_1:
-        return MODEL_TYPE_GEN_1
-    if model == MODEL_GEN_2:
-        if battery_level < 0:
-            return MODEL_TYPE_GEN_2_WIRED
-        return MODEL_TYPE_GEN_2_WIRELESS
-    return MODEL_TYPE_UNKNOWN
 
 
 def _get_file_duration(file):

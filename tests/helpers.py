@@ -1,14 +1,15 @@
-"""Helper functions for Logi Circle API unit tests"""
+"""Helper functions for Logi Circle API unit tests."""
 import os
+import asyncio
 
 
 def get_fixture_name(filename):
-    """Strips extension from filename when building fixtures dict key"""
+    """Strips extension from filename when building fixtures dict key."""
     return os.path.splitext(filename)[0]
 
 
 def get_fixtures():
-    """Grabs all fixtures and returns them in a dict"""
+    """Grabs all fixtures and returns them in a dict."""
     fixtures = {}
     path = os.path.join(os.path.dirname(__file__), 'fixtures')
     for filename in os.listdir(path):
@@ -17,3 +18,10 @@ def get_fixtures():
             fixtures[get_fixture_name(filename)] = fixture
             continue
     return fixtures
+
+
+def async_return(result):
+    """Mock a return from an async function."""
+    future = asyncio.Future()
+    future.set_result(result)
+    return future

@@ -2,11 +2,12 @@
 import os
 import sys
 import unittest
+from unittest.mock import MagicMock
 import asyncio
 from logi_circle.utils import (
-    _get_session_cookie, _handle_response, _model_number_to_type, _clean_cache, _exists_cache, _save_cache, _read_cache)
-from logi_circle.const import (CACHE_ATTRS, COOKIE_NAME, MODEL_GEN_1, MODEL_GEN_2, MODEL_TYPE_GEN_1,
-                               MODEL_TYPE_GEN_2_WIRED, MODEL_TYPE_GEN_2_WIRELESS, MODEL_TYPE_UNKNOWN)
+    _get_session_cookie, _handle_response, _clean_cache, _exists_cache, _save_cache, _read_cache,
+    _delete_quietly)
+from logi_circle.const import (CACHE_ATTRS, COOKIE_NAME)
 from logi_circle.exception import BadSession
 
 CACHE = 'tests/cache.db'
@@ -90,17 +91,6 @@ class TestUtils(unittest.TestCase):
         loop.run_until_complete(run_test())
         loop.close()
 
-    def test_model_number_to_type(self):
-        """Test _model_number_to_type method."""
-        self.assertEqual(_model_number_to_type(MODEL_GEN_1), MODEL_TYPE_GEN_1)
-        self.assertEqual(_model_number_to_type(MODEL_GEN_2, 50),
-                         MODEL_TYPE_GEN_2_WIRELESS)
-        self.assertEqual(_model_number_to_type(
-            MODEL_GEN_2, -1), MODEL_TYPE_GEN_2_WIRED)
-        self.assertEqual(_model_number_to_type(
-            MODEL_GEN_2), MODEL_TYPE_GEN_2_WIRED)
-        self.assertEqual(_model_number_to_type('A1234'), MODEL_TYPE_UNKNOWN)
-
     def test_init_clean_cache(self):
         """Test _clean_cache method."""
         self.assertTrue(_save_cache(DATA, CACHE))
@@ -118,6 +108,24 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(_save_cache(DATA, CACHE))
         self.assertIsInstance(_read_cache(CACHE), dict)
         self.cleanup()
+
+    def test_delete_quietly(self):
+        """Test _delete_quietly method."""
+        # Save original os.remove method
+        os_remove = os.remove
+
+        # Test successful deletion
+        os.remove = MagicMock()
+        _delete_quietly('/tmp/existing_file.txt')
+        os.remove.assert_called_once()
+
+        # Test unsuccessful deletion (should not raise exception)
+        os.remove = MagicMock(side_effect=OSError)
+        _delete_quietly('/tmp/missing_file.txt')
+        os.remove.assert_called_once()
+
+        # Restore original os.remove method
+        os.remove = os_remove
 
     def test_read_cache_eoferror(self):
         """Test _read_cache method."""

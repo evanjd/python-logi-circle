@@ -187,7 +187,8 @@ async def play_with_props():
         print('%s: %s%% battery remaining' %
               (camera.name, camera.battery_level))
         print('%s: Model number is %s' % (camera.name, camera.model))
-        print('%s: Model type is %s' % (camera.name, camera.model_type))
+        print('%s: Model generation is %s' % (camera.name, camera.model_generation))
+        print('%s: Mount is %s' % (camera.name, camera.mount))
         print('%s: Signal strength is %s%% (%s)' % (
             camera.name, camera.signal_strength_percentage, camera.signal_strength_category))
         print('%s: last activity was at %s and lasted for %s seconds.' % (
@@ -242,6 +243,9 @@ loop.close()
   - Fixed missing `last_activity_time` sensor on 2nd gen wired cameras.
 - 0.1.5
   - Added `get_livestream_image` and `record_livestream` methods to camera object, allowing snapshots (images) and videos of a specified length to be recorded from the camera's livestream (both requiring ffmpeg)
+- 0.1.6
+ - `set_streaming_mode` now accepts a boolean instead of string.
+ - Removed `model_type` property, replaced with `mount` and `model_generation` properties.
 
 ## Meta
 

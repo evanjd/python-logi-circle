@@ -2,9 +2,9 @@
 """Tests for the Logi API LiveStream class."""
 from datetime import datetime, timedelta
 import aresponses
+from freezegun import freeze_time
 from tests.test_base import LogiUnitTestBase
 from logi_circle.const import API_HOST, AUTH_ENDPOINT, CAMERAS_ENDPOINT, ACCESSORIES_ENDPOINT, LIVESTREAM_ENDPOINT
-from freezegun import freeze_time
 
 
 class TestLiveStream(LogiUnitTestBase):
