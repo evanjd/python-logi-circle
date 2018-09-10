@@ -52,6 +52,7 @@ class Camera():
         self._attrs['timezone'] = config.get('timeZone', 'UTC')
         self._attrs['battery_level'] = config.get('batteryLevel', None)
         self._attrs['is_charging'] = config.get('batteryCharging', None)
+        self._attrs['battery_saving'] = config.get('saveBattery', None)
         self._attrs['model'] = config.get('modelNumber', 'Unknown')
         self._attrs['wifi_signal_strength'] = config.get(
             'wifiSignalStrength', None)
@@ -316,6 +317,10 @@ class Camera():
         """Sets privacy mode on or off."""
         await self._set_config(prop='privacyMode', internal_prop='privacy_mode', value=status, value_type=bool)
 
+    async def set_battery_saving_mode(self, status):
+        """Sets the battery saving mode on or off."""
+        await self._set_config(prop='saveBattery', internal_prop='battery_saving', value=status, value_type=bool)
+
     async def _set_config(self, prop, internal_prop, value, value_type, internal_value=None):
         """Internal method for updating the camera's configuration."""
         if not isinstance(value, value_type):
@@ -378,6 +383,11 @@ class Camera():
             return int(battery_level)
         except ValueError:
             return battery_level
+
+    @property
+    def battery_saving(self):
+        """Return whether battery saving mode is activated."""
+        return self._attrs.get('battery_saving')
 
     @property
     def is_charging(self):

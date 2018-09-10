@@ -56,10 +56,10 @@ MODEL_GEN_2_MOUNT_WIRELESS = 'Wireless'
 # Feature mapping
 FEATURES = {
     MODEL_GEN_1_MOUNT: ['is_charging', 'battery_level', 'last_activity_time', 'privacy_mode',
-                        'signal_strength_percentage', 'signal_strength_category'],
+                        'signal_strength_percentage', 'signal_strength_category', 'speaker_volume', 'streaming_mode'],
     MODEL_GEN_2_MOUNT_WIRED: ['last_activity_time', 'privacy_mode', 'signal_strength_percentage',
-                              'signal_strength_category'],
+                              'signal_strength_category', 'speaker_volume', 'streaming_mode'],
     MODEL_GEN_2_MOUNT_WIRELESS: ['is_charging', 'battery_level', 'last_activity_time', 'privacy_mode',
-                                 'signal_strength_percentage', 'signal_strength_category'],
+                                 'signal_strength_percentage', 'signal_strength_category', 'speaker_volume', 'streaming_mode'],
     MODEL_GEN_UNKNOWN_NAME: ['last_activity_time']
 }

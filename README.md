@@ -186,6 +186,8 @@ async def play_with_props():
                           ('is charging' if camera.is_charging else 'is not charging')))
         print('%s: %s%% battery remaining' %
               (camera.name, camera.battery_level))
+        print('%s: Battery saving mode is %s' %
+              (camera.name, 'on' if camera.battery_saving else 'off'))
         print('%s: Model number is %s' % (camera.name, camera.model))
         print('%s: Model generation is %s' % (camera.name, camera.model_generation))
         print('%s: Mount is %s' % (camera.name, camera.mount))
@@ -246,6 +248,7 @@ loop.close()
 - 0.1.6
   - `set_streaming_mode` now accepts a boolean instead of string.
   - Removed `model_type` property, replaced with `mount` and `model_generation` properties.
+  - Added `battery_saving` property and `set_battery_saving_mode` method
 
 ## Meta
 
