@@ -3,7 +3,7 @@
 # vim:sw=4:ts=4:et:
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from subprocess import CalledProcessError
 from tempfile import NamedTemporaryFile
 import pytz
@@ -11,7 +11,8 @@ from aiohttp.client_exceptions import ClientResponseError
 from .const import (
     PROTOCOL, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, IMAGES_ENDPOINT, JPEG_CONTENT_TYPE, FEATURES,
     MODEL_GEN_1, MODEL_GEN_2, MODEL_GEN_1_NAME, MODEL_GEN_2_NAME, MODEL_GEN_UNKNOWN_NAME,
-    MODEL_GEN_1_MOUNT, MODEL_GEN_2_MOUNT_WIRED, MODEL_GEN_2_MOUNT_WIRELESS)
+    MODEL_GEN_1_MOUNT, MODEL_GEN_2_MOUNT_WIRED, MODEL_GEN_2_MOUNT_WIRELESS,
+    UPDATE_REQUEST_THROTTLE)
 from .activity import Activity
 from .live_stream import LiveStream
 from .utils import (_stream_to_file, _write_to_file, _delete_quietly, _get_file_duration,
@@ -28,6 +29,8 @@ class Camera():
         """Initialise Logi Camera object."""
         self._logi = logi
         self._attrs = {}
+        # Internal prop to determine when the next update is allowed.
+        self._next_update_time = datetime.utcnow()
 
         self._set_attributes(camera)
 
@@ -80,15 +83,21 @@ class Camera():
 
         self._local_tz = pytz.timezone(self._attrs['timezone'])
 
-    async def update(self):
+    async def update(self, force=False):
         """Poll API for changes to camera properties."""
         _LOGGER.debug('Updating properties for camera %s', self.name)
 
-        url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
-        camera = await self._logi._fetch(
-            url=url, method='GET')
+        if force is True or datetime.utcnow() >= self._next_update_time:
+            url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
+            camera = await self._logi._fetch(
+                url=url, method='GET')
 
-        self._set_attributes(camera)
+            self._set_attributes(camera)
+            self._next_update_time = datetime.utcnow(
+            ) + timedelta(seconds=UPDATE_REQUEST_THROTTLE)
+        else:
+            _LOGGER.debug('Request to update ignored, requested too soon after previous update. Throttle interval is %s.',
+                          UPDATE_REQUEST_THROTTLE)
 
     def supported_features(self):
         """Returns an array of supported sensors for this camera."""

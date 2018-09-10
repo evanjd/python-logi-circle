@@ -46,7 +46,7 @@ class LiveStream():
         """Gets the MPD XML and extracts the data required to download segments"""
 
         # Force an update to get the latest node ID
-        await self._camera.update()
+        await self._camera.update(force=True)
 
         # Get MPD XML and save to raw_xml var
         url = self._get_mpd_url()

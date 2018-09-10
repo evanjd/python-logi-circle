@@ -249,6 +249,8 @@ loop.close()
   - `set_streaming_mode` now accepts a boolean instead of string.
   - Removed `model_type` property, replaced with `mount` and `model_generation` properties.
   - Added `battery_saving` property and `set_battery_saving_mode` method
+- 0.1.7
+  - Implemented rudimentary throttling on `update()` requests
 
 ## Meta
 

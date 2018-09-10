@@ -20,6 +20,7 @@ try:
 except (AttributeError, TypeError):
     CACHE_FILE = os.path.join('.', '.logi_circle-session.cache')
 COOKIE_NAME = 'prod_session'
+UPDATE_REQUEST_THROTTLE = 5  # seconds
 
 # Date formats
 # Yes, we're hard-coding the timezone. "%z" is a py37 only feature,
