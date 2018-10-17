@@ -10,6 +10,8 @@
 
 This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects. The goal is to expose most of the functionality from Logi's 1st party applications, allowing integration of those features into other projects.
 
+[Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
+
 Note that the API this project is based on is not open, and therefore could change/break at any time.
 
 ## Installation
