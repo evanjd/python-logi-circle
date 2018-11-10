@@ -4,7 +4,10 @@ max-line-length=120
 good-names=id
 
 disable=
-  W0212 #
+  protected-access,
+  too-many-arguments,
+  too-few-public-methods
+
 
 [EXCEPTIONS]
 overgeneral-exceptions=Exception
