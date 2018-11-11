@@ -1,13 +1,9 @@
 """Python wrapper for the official Logi Circle API"""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
-import sys
 import logging
-import json
-from urllib.parse import urlencode
-import aiohttp
 
-from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE, API_BASE
+from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE
 from .auth import AuthProvider
 
 _LOGGER = logging.getLogger(__name__)
