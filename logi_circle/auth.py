@@ -7,7 +7,7 @@ import pickle
 from urllib.parse import urlencode
 import aiohttp
 
-from .const import AUTH_ENDPOINT, TOKEN_ENDPOINT
+from .const import AUTH_BASE, AUTH_ENDPOINT, TOKEN_ENDPOINT
 from .exception import AuthorizationFailed, NotAuthorized
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,12 +16,13 @@ _LOGGER = logging.getLogger(__name__)
 class AuthProvider():
     """OAuth2 client for the Logi Circle API"""
 
-    def __init__(self, client_id, client_secret, redirect_uri, scopes, cache_file):
+    def __init__(self, client_id, client_secret, redirect_uri, scopes, cache_file, logi_base):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.scopes = scopes
         self.cache_file = cache_file
+        self.logi = logi_base
         self.tokens = self._read_token()
         self.session = None
 
@@ -39,7 +40,7 @@ class AuthProvider():
                         "redirect_uri": self.redirect_uri,
                         "scope": self.scopes}
 
-        return '%s?%s' % (AUTH_ENDPOINT, urlencode(query_string))
+        return '%s?%s' % (AUTH_BASE + AUTH_ENDPOINT, urlencode(query_string))
 
     @property
     def refresh_token(self):
@@ -47,6 +48,13 @@ class AuthProvider():
         if not self.authorized:
             return None
         return self.tokens[self.client_id].get('refresh_token')
+
+    @property
+    def access_token(self):
+        """The access token granted by the Logi Circle API for the current client ID."""
+        if not self.authorized:
+            return None
+        return self.tokens[self.client_id].get('access_token')
 
     async def authorize(self, code):
         """Request a bearer token with the supplied authorization code"""
@@ -75,24 +83,30 @@ class AuthProvider():
         """Request or refresh the access token with Logi Circle"""
 
         await self._create_session()
-        async with self.session.post(TOKEN_ENDPOINT, data=payload) as req:
+        async with self.session.post(AUTH_BASE + TOKEN_ENDPOINT, data=payload) as req:
             response = await req.json()
 
             if req.status >= 400:
+                self.logi.is_connected = False
                 error_message = response.get(
                     "error_description", "Non-OK code %s returned" % (req.status))
                 raise AuthorizationFailed(error_message)
 
             # Authorization succeeded. Persist the refresh and access tokens.
+            self.logi.is_connected = True
             self.tokens[self.client_id] = response
             self._save_token()
 
     async def _create_session(self):
         """Creates an aiohttp session, closing any existing active sessions."""
-        if isinstance(self.session, aiohttp.ClientSession):
-            await self.session.close()
+        await self._close_session()
 
         self.session = aiohttp.ClientSession()
+
+    async def _close_session(self):
+        """Closing any existing active sessions."""
+        if isinstance(self.session, aiohttp.ClientSession):
+            await self.session.close()
 
     def _save_token(self):
         """Dump data into a pickle file."""
@@ -103,11 +117,7 @@ class AuthProvider():
     def _read_token(self):
         """Read data from a pickle file."""
         filename = self.cache_file
-        try:
-            if os.path.isfile(filename):
-                data = pickle.load(open(filename, 'rb'))
-                return data
-
-        except (OSError, IOError):
-            # File doesn't exist, return an empty object
-            return {}
+        if os.path.isfile(filename):
+            data = pickle.load(open(filename, 'rb'))
+            return data
+        return {}

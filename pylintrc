@@ -6,6 +6,7 @@ good-names=id
 disable=
   protected-access,
   too-many-arguments,
+  too-many-instance-attributes,
   too-few-public-methods
 
 

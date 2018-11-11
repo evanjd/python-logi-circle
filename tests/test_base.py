@@ -4,8 +4,9 @@ import unittest
 import asyncio
 from tests.helpers import get_fixtures
 
-USERNAME = 'test@email.com'
-PASSWORD = 'correct_horse_battery_staple'
+CLIENT_ID = 'abcdefghijklmnopqrstuvwxyz'
+CLIENT_SECRET = 'correct_horse_battery_staple'
+REDIRECT_URI = 'https://my.groovy.app/'
 CACHE_FILE = os.path.join(os.path.dirname(__file__), 'cache.db')
 FIXTURES = get_fixtures()
 
@@ -15,16 +16,17 @@ class LogiUnitTestBase(unittest.TestCase):
 
     def setUp(self):
         """Setup unit test, create event loop."""
-        from logi_circle import Logi
+        from logi_circle import LogiCircle
 
-        self.logi = Logi(USERNAME, PASSWORD, cache_file=CACHE_FILE)
-        self.logi_no_reuse = \
-            Logi(USERNAME, PASSWORD, reuse_session=False)
-
-        self.username = USERNAME
-        self.password = PASSWORD
-        self.cache_file = CACHE_FILE
+        self.logi = LogiCircle(client_id=CLIENT_ID,
+                               client_secret=CLIENT_SECRET,
+                               redirect_uri=REDIRECT_URI,
+                               cache_file=CACHE_FILE)
         self.fixtures = FIXTURES
+        self.client_id = CLIENT_ID
+        self.client_secret = CLIENT_SECRET
+        self.redirect_uri = REDIRECT_URI
+        self.cache_file = CACHE_FILE
 
         self.loop = asyncio.new_event_loop()
 
@@ -32,7 +34,6 @@ class LogiUnitTestBase(unittest.TestCase):
         """Cleanup any data created from the tests."""
         self.loop.close()
         self.logi = None
-        self.logi_no_reuse = None
         if os.path.isfile(CACHE_FILE):
             os.remove(CACHE_FILE)
 
