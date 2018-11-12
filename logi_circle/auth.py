@@ -79,11 +79,18 @@ class AuthProvider():
 
         await self._authenticate(refresh_payload)
 
+    async def close(self):
+        """Closes the aiohttp session."""
+        if isinstance(self.session, aiohttp.ClientSession):
+            await self.session.close()
+            self.session = None
+            self.logi.is_connected = False
+
     async def _authenticate(self, payload):
         """Request or refresh the access token with Logi Circle"""
 
-        await self._create_session()
-        async with self.session.post(AUTH_BASE + TOKEN_ENDPOINT, data=payload) as req:
+        session = await self.get_session()
+        async with session.post(AUTH_BASE + TOKEN_ENDPOINT, data=payload) as req:
             response = await req.json()
 
             if req.status >= 400:
@@ -97,16 +104,13 @@ class AuthProvider():
             self.tokens[self.client_id] = response
             self._save_token()
 
-    async def _create_session(self):
-        """Creates an aiohttp session, closing any existing active sessions."""
-        await self._close_session()
+    async def get_session(self):
+        """Returns a aiohttp session, creating one if it doesn't already exist."""
+        if not isinstance(self.session, aiohttp.ClientSession):
+            self.session = aiohttp.ClientSession()
+            self.logi.is_connected = True
 
-        self.session = aiohttp.ClientSession()
-
-    async def _close_session(self):
-        """Closing any existing active sessions."""
-        if isinstance(self.session, aiohttp.ClientSession):
-            await self.session.close()
+        return self.session
 
     def _save_token(self):
         """Dump data into a pickle file."""

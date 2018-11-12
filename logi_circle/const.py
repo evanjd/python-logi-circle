@@ -16,7 +16,8 @@ AUTH_ENDPOINT = "/identity/oauth2/authorize"
 TOKEN_ENDPOINT = "/identity/oauth2/token"
 DEFAULT_SCOPES = ("circle:activities_basic circle:activities circle:accessories circle:accessories_ro "
                   "circle:live_image circle:live circle:notifications circle:summaries")
-AUTH_HEADER_KEY = "X-API-Key"
 
 # API endpoints
-API_BASE = "https://api.circle.logi.com/"
+API_HOST = "api.circle.logi.com"
+API_BASE = "https://%s" % (API_HOST)
+ACCESSORIES_ENDPOINT = "/api/accessories"

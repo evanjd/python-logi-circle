@@ -82,7 +82,7 @@ class TestAuth(LogiUnitTestBase):
                 self.assertEqual(logi.auth_provider.access_token,
                                  dict_refresh_fixture['access_token'])
 
-                await logi.auth_provider._close_session()
+                await logi.close()
 
         self.loop.run_until_complete(run_test())
 
@@ -100,7 +100,7 @@ class TestAuth(LogiUnitTestBase):
                 # Mock authorization, and verify AuthProvider state
                 with self.assertRaises(AuthorizationFailed):
                     await logi.authorize('letmein')
-                await logi.auth_provider._close_session()
+                await logi.close()
 
         self.loop.run_until_complete(run_test())
 
