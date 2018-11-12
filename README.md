@@ -12,7 +12,7 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
 
-**This branch hosts a WIP rewrite based on the soon-to-be released public API. It is not yet fully functional.**
+**This branch hosts a WIP rewrite based on Logitech's public API. It is not yet fully functional. This is intended to replace the 0.1.x wrapper (based on the private API) once completed.**
 
 ## Usage example
 
