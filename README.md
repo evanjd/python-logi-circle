@@ -37,9 +37,7 @@ if not logi.authorized:
         await logi.authorize(code)
         await logi.close()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(authorize())
-    loop.close()
+    asyncio.get_event_loop().run_until_complete(authorize()).close()
 ```
 
 ## Meta
