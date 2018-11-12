@@ -12,7 +12,35 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
 
-**This branch hosts a WIP rewrite based on the soon-to-be released public API. It is not yet functional**.
+**This branch hosts a WIP rewrite based on the soon-to-be released public API. It is not yet fully functional.**
+
+## Usage example
+
+#### Setup and authenticate:
+
+Requires API access from Logitech. Link to obtain that access TBA.
+
+```python
+import asyncio
+from logi_circle import LogiCircle
+
+logi = LogiCircle(client_id='your-client-id',
+                  client_secret='your-client-secret',
+                  redirect_uri='https://your-redirect-uri',
+                  api_key='your-api-key')
+
+if not logi.authorized:
+    print('Navigate to %s and enter the authorization code passed back to your redirect URI' % (logi.authorize_url))
+    code = input('Code: ')
+
+    async def authorize():
+        await logi.authorize(code)
+        await logi.close()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(authorize())
+    loop.close()
+```
 
 ## Meta
 
