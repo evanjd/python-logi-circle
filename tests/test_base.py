@@ -1,8 +1,12 @@
 """Register Logi API with mock aiohttp ClientSession and responses."""
 import os
+import pickle
+import json
 import unittest
 import asyncio
 from tests.helpers import get_fixtures
+from logi_circle.const import DEFAULT_SCOPES
+from logi_circle.auth import AuthProvider
 
 CLIENT_ID = 'abcdefghijklmnopqrstuvwxyz'
 CLIENT_SECRET = 'correct_horse_battery_staple'
@@ -32,8 +36,27 @@ class LogiUnitTestBase(unittest.TestCase):
 
         self.loop = asyncio.new_event_loop()
 
+    def get_authorized_auth_provider(self):
+        auth_fixture = json.loads(self.fixtures['auth_code'])
+        token = {}
+        token[self.client_id] = auth_fixture
+        with open(self.cache_file, 'wb') as pickle_db:
+            pickle.dump(token, pickle_db)
+
+        return AuthProvider(client_id=self.client_id,
+                            client_secret=self.client_secret,
+                            redirect_uri=self.redirect_uri,
+                            scopes=DEFAULT_SCOPES,
+                            cache_file=self.cache_file,
+                            logi_base=self.logi)
+
     def cleanup(self):
         """Cleanup any data created from the tests."""
+        async def close_session():
+            await self.logi.close()
+
+        self.loop.run_until_complete(close_session())
+
         self.loop.close()
         self.logi = None
         if os.path.isfile(CACHE_FILE):

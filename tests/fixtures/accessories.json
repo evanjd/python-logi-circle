@@ -46,7 +46,7 @@
     "modelNumber": "A1533"
   },
   {
-    "accountId": "1234567-8901-2345-6789-012345678901",
+    "accountId": "abcdefgh-1234-ijkl-5678-mnopqrstuvwx",
     "accessoryId": "aaaaaaaa-bbbb-cccc-dddd-eeefffggghhh",
     "name": "Mock Camera Gen2 Wired",
     "nodeConnected": false,
@@ -92,18 +92,18 @@
     "modelNumber": "V-R0008"
   },
   {
-    "accountId": "9876543-2109-8765-4321-987654321098",
-    "accessoryId": "aaaaaaaa-bbbb-cccc-dddd-eeefffggghhh",
+    "accountId": "abcdefgh-1234-ijkl-5678-mnopqrstuvwx",
+    "accessoryId": "ZZZZxxxx-1212-0000-abcd-abc111def222",
     "name": "Mock Camera Gen2 Wire Free",
-    "nodeConnected": false,
+    "nodeConnected": true,
     "messengerConnected": false,
-    "isConnected": false,
+    "isConnected": true,
     "configuration": {
       "firmwareVersion": "5.2.191",
       "timeInSync": true,
       "timeZone": "Australia/Melbourne",
-      "wifiSignalStrength": 50,
-      "batteryLevel": 80,
+      "wifiSignalStrength": 85,
+      "batteryLevel": 96,
       "batteryCharging": false,
       "horizontalFlip": false,
       "verticalFlip": false,
@@ -117,11 +117,11 @@
         "width": 1280,
         "height": 720
       },
-      "ledEnabled": true,
+      "ledEnabled": false,
       "saveBattery": false,
       "powerLineFreq": 0,
       "privacyMode": false,
-      "pirWakeUp": false,
+      "pirWakeUp": true,
       "persistentLog": false,
       "fastLiveView": false,
       "wifiLI": 0,
@@ -134,7 +134,7 @@
       "wifiSleepPM": 0
     },
     "modified": "2018-01-01T00:00:00.000000Z",
-    "mac": "AA-00-BB-11-CC-22",
+    "mac": "DD-55-EE-66-FF-77",
     "modelNumber": "V-R0008"
   }
 ]

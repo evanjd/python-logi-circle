@@ -82,8 +82,6 @@ class TestAuth(LogiUnitTestBase):
                 self.assertEqual(logi.auth_provider.access_token,
                                  dict_refresh_fixture['access_token'])
 
-                await logi.close()
-
         self.loop.run_until_complete(run_test())
 
     def test_failed_authorization(self):
@@ -100,7 +98,6 @@ class TestAuth(LogiUnitTestBase):
                 # Mock authorization, and verify AuthProvider state
                 with self.assertRaises(AuthorizationFailed):
                     await logi.authorize('letmein')
-                await logi.close()
 
         self.loop.run_until_complete(run_test())
 
@@ -109,19 +106,7 @@ class TestAuth(LogiUnitTestBase):
 
         # Write mock token to disk
         auth_fixture = json.loads(self.fixtures['auth_code'])
-        token = {}
-        token[self.client_id] = auth_fixture
-
-        print(token)
-        with open(self.cache_file, 'wb') as pickle_db:
-            pickle.dump(token, pickle_db)
-
-        auth_provider = AuthProvider(client_id=self.client_id,
-                                     client_secret=self.client_secret,
-                                     redirect_uri=self.redirect_uri,
-                                     scopes=DEFAULT_SCOPES,
-                                     cache_file=self.cache_file,
-                                     logi_base=self.logi)
+        auth_provider = self.get_authorized_auth_provider()
 
         self.assertTrue(
             auth_provider.authorized, 'API reports not authorized with token loaded from disk')
