@@ -26,7 +26,7 @@ class Camera():
             self._attrs['name'] = camera['name']
             self._attrs['is_connected'] = camera['isConnected']
             config = camera['configuration']
-        except ValueError:
+        except KeyError:
             _LOGGER.error(
                 'Camera could not be initialised, API did not return one or more required properties.')
             raise
@@ -39,14 +39,14 @@ class Camera():
         self._attrs['battery_level'] = config.get('batteryLevel', None)
         self._attrs['is_charging'] = config.get('batteryCharging', None)
         self._attrs['battery_saving'] = config.get('saveBattery', None)
-        self._attrs['wifi_signal_strength'] = config.get(
+        self._attrs['signal_strength_percentage'] = config.get(
             'wifiSignalStrength', None)
         self._attrs['firmware'] = config.get('firmwareVersion', None)
         self._attrs['microphone_on'] = config.get('microphoneOn', False)
         self._attrs['microphone_gain'] = config.get('microphoneGain', None)
         self._attrs['speaker_on'] = config.get('speakerOn', False)
         self._attrs['speaker_volume'] = config.get('speakerVolume', None)
-        self._attrs['led'] = config.get('ledEnabled', False)
+        self._attrs['led_on'] = config.get('ledEnabled', False)
         self._attrs['privacy_mode'] = config.get('privacyMode', False)
 
         self._local_tz = pytz.timezone(self._attrs['timezone'])
@@ -78,12 +78,9 @@ class Camera():
 
     @property
     def battery_level(self):
-        """Return battery level (integer between 0-100)."""
-        battery_level = self._attrs.get('battery_level')
-        try:
-            return int(battery_level)
-        except ValueError:
-            return battery_level
+        """Return battery level (integer between -1 and 100)."""
+        # -1 means no battery, wired only.
+        return self._attrs.get('battery_level')
 
     @property
     def battery_saving(self):
@@ -108,21 +105,23 @@ class Camera():
     @property
     def signal_strength_percentage(self):
         """Return signal strength between 0-100 (0 = bad, 100 = excellent)."""
-        return self._attrs.get('wifi_signal_strength')
+        return self._attrs.get('signal_strength_percentage')
 
     @property
     def signal_strength_category(self):
         """Interpret signal strength value and return a friendly categorisation."""
-        signal_strength = self._attrs.get('wifi_signal_strength', 0)
-        if signal_strength > 80:
-            return 'Excellent'
-        if signal_strength > 60:
-            return 'Good'
-        if signal_strength > 40:
-            return 'Fair'
-        if signal_strength > 20:
-            return 'Poor'
-        return 'Bad'
+        signal_strength = self._attrs.get('signal_strength_percentage')
+        if signal_strength is not None:
+            if signal_strength > 80:
+                return 'Excellent'
+            if signal_strength > 60:
+                return 'Good'
+            if signal_strength > 40:
+                return 'Fair'
+            if signal_strength > 20:
+                return 'Poor'
+            return 'Bad'
+        return None
 
     @property
     def mac_address(self):
@@ -137,11 +136,7 @@ class Camera():
     @property
     def microphone_gain(self):
         """Return microphone gain using absolute scale (1-100)."""
-        gain = self._attrs.get('microphone_gain')
-        try:
-            return int(gain)
-        except ValueError:
-            return gain
+        return self._attrs.get('microphone_gain')
 
     @property
     def speaker_on(self):
@@ -151,16 +146,12 @@ class Camera():
     @property
     def speaker_volume(self):
         """Return speaker volume using absolute scale (1-100)."""
-        volume = self._attrs.get('speaker_volume')
-        try:
-            return int(volume)
-        except ValueError:
-            return volume
+        return self._attrs.get('speaker_volume')
 
     @property
     def led_on(self):
         """Return bool indicating whether LED is enabled."""
-        return self._attrs.get('led')
+        return self._attrs.get('led_on')
 
     @property
     def privacy_mode(self):
