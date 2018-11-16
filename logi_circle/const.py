@@ -21,3 +21,4 @@ DEFAULT_SCOPES = ("circle:activities_basic circle:activities circle:accessories 
 API_HOST = "api.circle.logi.com"
 API_BASE = "https://%s" % (API_HOST)
 ACCESSORIES_ENDPOINT = "/api/accessories"
+LIVE_IMAGE_ENDPOINT = "/live/image"

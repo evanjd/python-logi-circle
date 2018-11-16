@@ -3,6 +3,8 @@
 # vim:sw=4:ts=4:et:
 import logging
 import pytz
+from .const import (ACCESSORIES_ENDPOINT, LIVE_IMAGE_ENDPOINT)
+from .utils import _stream_to_file
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +14,7 @@ class Camera():
 
     def __init__(self, logi, camera):
         """Initialise Logi Camera object."""
-        self._logi = logi
+        self.logi = logi
         self._attrs = {}
 
         self._set_attributes(camera)
@@ -26,7 +28,7 @@ class Camera():
             self._attrs['name'] = camera['name']
             self._attrs['is_connected'] = camera['isConnected']
             config = camera['configuration']
-        except KeyError:
+        except (KeyError, TypeError):
             _LOGGER.error(
                 'Camera could not be initialised, API did not return one or more required properties.')
             raise
@@ -50,6 +52,22 @@ class Camera():
         self._attrs['privacy_mode'] = config.get('privacyMode', False)
 
         self._local_tz = pytz.timezone(self._attrs['timezone'])
+
+    async def get_image(self, quality=75, refresh=False, filename=None):
+        """Download the most recent snapshot image for this camera"""
+
+        url = '%s/%s/%s' % (ACCESSORIES_ENDPOINT, self.id, LIVE_IMAGE_ENDPOINT)
+        accept_header = {'Accept': 'image/jpeg'}
+        params = {'quality': quality, 'refresh': str(refresh).lower()}
+
+        image = await self.logi._fetch(url=url, raw=True, headers=accept_header, params=params)
+        if filename:
+            await _stream_to_file(image.content, filename)
+            image.close()
+            return True
+        content = await image.read()
+        image.close()
+        return content
 
     @property
     def id(self):

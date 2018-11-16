@@ -61,18 +61,21 @@ class LogiCircle():
                      method='GET',
                      params=None,
                      request_body=None,
+                     headers=None,
                      relative_to_api_root=True,
                      raw=False,
                      _reattempt=False):
         """Query data from the Logi Circle API."""
+        # pylint: disable=too-many-locals
 
         if not self.auth_provider.authorized:
             raise NotAuthorized('No access token available for this client ID')
 
-        headers = {
+        base_headers = {
             'X-API-Key': self.api_key,
             'Authorization': 'Bearer %s' % (self.auth_provider.access_token)
         }
+        request_headers = {**base_headers, **(headers or {})}
 
         resolved_url = (API_BASE + url if relative_to_api_root else url)
         _LOGGER.debug("Fetching %s (%s)", resolved_url, method)
@@ -82,16 +85,18 @@ class LogiCircle():
 
         # Perform request
         if method == 'GET':
-            resp = await session.get(resolved_url, headers=headers, params=params)
+            resp = await session.get(resolved_url, headers=request_headers, params=params)
         elif method == 'POST':
-            resp = await session.post(resolved_url, headers=headers, params=params, json=request_body)
+            resp = await session.post(resolved_url, headers=request_headers, params=params, json=request_body)
         elif method == 'PUT':
-            resp = await session.put(resolved_url, headers=headers, params=params, json=request_body)
+            resp = await session.put(resolved_url, headers=request_headers, params=params, json=request_body)
         else:
             raise ValueError('Method %s not supported.' % (method))
 
-        _LOGGER.debug('Request %s (%s) returned %s',
-                      resolved_url, method, resp.status)
+        content_type = resp.headers.get('content-type')
+
+        _LOGGER.debug('Request %s (%s) returned %s with content type %s',
+                      resolved_url, method, resp.status, content_type)
 
         if resp.status == 401 and not _reattempt:
             # Token may have expired. Refresh and try again.
@@ -109,7 +114,12 @@ class LogiCircle():
             raise AuthorizationFailed('Could not refresh access token')
 
         if raw:
+            # Return unread ClientResponse object to client.
             return resp
-        resp_data = await resp.json()
+        if 'json' in content_type:
+            resp_data = await resp.json()
+        else:
+            resp_data = await resp.read()
+
         resp.close()
         return resp_data
