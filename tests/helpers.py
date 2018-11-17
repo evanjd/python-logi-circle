@@ -29,8 +29,8 @@ def async_return(result):
 
 class FakeStream():
 
-    async def read(bytes):
-        return '123'
+    async def read(self):
+        return b'123'
 
-    def close(a):
+    def close(self):
         return True

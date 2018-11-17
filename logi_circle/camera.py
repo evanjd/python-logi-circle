@@ -3,7 +3,11 @@
 # vim:sw=4:ts=4:et:
 import logging
 import pytz
-from .const import (ACCESSORIES_ENDPOINT, LIVE_IMAGE_ENDPOINT)
+from .const import (ACCESSORIES_ENDPOINT,
+                    LIVE_IMAGE_ENDPOINT,
+                    ACCEPT_IMAGE_HEADER,
+                    DEFAULT_IMAGE_QUALITY,
+                    DEFAULT_IMAGE_REFRESH)
 from .utils import _stream_to_file
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,11 +57,14 @@ class Camera():
 
         self._local_tz = pytz.timezone(self._attrs['timezone'])
 
-    async def get_image(self, quality=75, refresh=False, filename=None):
+    async def get_image(self,
+                        quality=DEFAULT_IMAGE_QUALITY,
+                        refresh=DEFAULT_IMAGE_REFRESH,
+                        filename=None):
         """Download the most recent snapshot image for this camera"""
 
         url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.id, LIVE_IMAGE_ENDPOINT)
-        accept_header = {'Accept': 'image/jpeg'}
+        accept_header = ACCEPT_IMAGE_HEADER
         params = {'quality': quality, 'refresh': str(refresh).lower()}
 
         image = await self.logi._fetch(url=url, raw=True, headers=accept_header, params=params)

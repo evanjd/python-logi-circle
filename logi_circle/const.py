@@ -22,3 +22,10 @@ API_HOST = "api.circle.logi.com"
 API_BASE = "https://%s" % (API_HOST)
 ACCESSORIES_ENDPOINT = "/api/accessories"
 LIVE_IMAGE_ENDPOINT = "/live/image"
+
+# Headers
+ACCEPT_IMAGE_HEADER = {'Accept': 'image/jpeg'}
+
+# Misc
+DEFAULT_IMAGE_QUALITY = 75
+DEFAULT_IMAGE_REFRESH = False

@@ -7,7 +7,12 @@ import os
 from unittest.mock import MagicMock
 from tests.test_base import LogiUnitTestBase
 from logi_circle.camera import Camera
-from logi_circle.const import (API_HOST, ACCESSORIES_ENDPOINT, LIVE_IMAGE_ENDPOINT)
+from logi_circle.const import (API_HOST,
+                               ACCESSORIES_ENDPOINT,
+                               LIVE_IMAGE_ENDPOINT,
+                               ACCEPT_IMAGE_HEADER,
+                               DEFAULT_IMAGE_QUALITY,
+                               DEFAULT_IMAGE_REFRESH)
 from .helpers import async_return, FakeStream
 TEMP_IMAGE = 'temp.jpg'
 
@@ -146,22 +151,32 @@ class TestCamera(LogiUnitTestBase):
         self.logi._fetch = MagicMock(
             return_value=async_return(FakeStream()))
 
-        # TODO: Need to migrate these default values to consts
-
         async def run_test():
             # Test defaults
             await test_camera.get_image()
 
             self.logi._fetch.assert_called_with(
-                headers={'Accept': 'image/jpeg'}, params={'quality': 75, 'refresh': 'false'}, raw=True, url=endpoint)
+                headers=ACCEPT_IMAGE_HEADER,
+                params={'quality': DEFAULT_IMAGE_QUALITY,
+                        'refresh': str(DEFAULT_IMAGE_REFRESH).lower()},
+                raw=True,
+                url=endpoint)
 
             # Test quality
             await test_camera.get_image(quality=55)
             self.logi._fetch.assert_called_with(
-                headers={'Accept': 'image/jpeg'}, params={'quality': 55, 'refresh': 'false'}, raw=True, url=endpoint)
+                headers=ACCEPT_IMAGE_HEADER,
+                params={'quality': 55,
+                        'refresh': str(DEFAULT_IMAGE_REFRESH).lower()},
+                raw=True,
+                url=endpoint)
 
             await test_camera.get_image(refresh=True)
             self.logi._fetch.assert_called_with(
-                headers={'Accept': 'image/jpeg'}, params={'quality': 75, 'refresh': 'true'}, raw=True, url=endpoint)
+                headers=ACCEPT_IMAGE_HEADER,
+                params={'quality': DEFAULT_IMAGE_QUALITY,
+                        'refresh': 'true'},
+                raw=True,
+                url=endpoint)
 
         self.loop.run_until_complete(run_test())
