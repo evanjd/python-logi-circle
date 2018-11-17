@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 """The tests for the Logi API platform."""
-import json
-from urllib.parse import urlparse, parse_qs
-import pickle
 import aresponses
 import aiohttp
 from tests.test_base import LogiUnitTestBase
-from logi_circle.const import AUTH_HOST, TOKEN_ENDPOINT, API_HOST, DEFAULT_SCOPES, ACCESSORIES_ENDPOINT
+from logi_circle.const import AUTH_HOST, TOKEN_ENDPOINT, API_HOST, ACCESSORIES_ENDPOINT
 from logi_circle.exception import NotAuthorized, AuthorizationFailed
-from logi_circle.auth import AuthProvider
 
 
 class TestAuth(LogiUnitTestBase):

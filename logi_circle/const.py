@@ -22,6 +22,7 @@ API_HOST = "api.circle.logi.com"
 API_BASE = "https://%s" % (API_HOST)
 ACCESSORIES_ENDPOINT = "/api/accessories"
 LIVE_IMAGE_ENDPOINT = "/live/image"
+RTSP_ENDPOINT = "/live/rtsp"
 
 # Headers
 ACCEPT_IMAGE_HEADER = {'Accept': 'image/jpeg'}
