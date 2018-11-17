@@ -25,3 +25,12 @@ def async_return(result):
     future = asyncio.Future()
     future.set_result(result)
     return future
+
+
+class FakeStream():
+
+    async def read(bytes):
+        return '123'
+
+    def close(a):
+        return True

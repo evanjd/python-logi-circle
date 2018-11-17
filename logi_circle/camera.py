@@ -56,7 +56,7 @@ class Camera():
     async def get_image(self, quality=75, refresh=False, filename=None):
         """Download the most recent snapshot image for this camera"""
 
-        url = '%s/%s/%s' % (ACCESSORIES_ENDPOINT, self.id, LIVE_IMAGE_ENDPOINT)
+        url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.id, LIVE_IMAGE_ENDPOINT)
         accept_header = {'Accept': 'image/jpeg'}
         params = {'quality': quality, 'refresh': str(refresh).lower()}
 
