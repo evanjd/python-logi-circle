@@ -76,6 +76,14 @@ class Camera():
         image.close()
         return content
 
+    async def update(self):
+        """Poll API for changes to camera properties"""
+        _LOGGER.debug('Updating properties for camera %s', self.name)
+
+        url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
+        camera = await self.logi._fetch(url=url)
+        self._set_attributes(camera)
+
     @property
     def id(self):
         """Return device ID."""

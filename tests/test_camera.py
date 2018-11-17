@@ -180,3 +180,28 @@ class TestCamera(LogiUnitTestBase):
                 url=endpoint)
 
         self.loop.run_until_complete(run_test())
+
+    def test_update(self):
+        """Test polling for changes in camera properties"""
+
+        gen1_fixture = json.loads(self.fixtures['accessories'])[0]
+        test_camera = Camera(self.logi, gen1_fixture)
+        self.logi.auth_provider = self.get_authorized_auth_provider()
+        endpoint = '%s/%s' % (ACCESSORIES_ENDPOINT, test_camera.id)
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, endpoint, 'get',
+                          aresponses.Response(status=200,
+                                              text=self.fixtures['accessory'],
+                                              headers={'content-type': 'application/json'}))
+                # Props should match fixture
+                self.assertEqual(test_camera.battery_level, 100)
+                self.assertEqual(test_camera.signal_strength_percentage, 74)
+
+                await test_camera.update()
+                # Props should have changed.
+                self.assertEqual(test_camera.battery_level, 99)
+                self.assertEqual(test_camera.signal_strength_percentage, 88)
+
+        self.loop.run_until_complete(run_test())

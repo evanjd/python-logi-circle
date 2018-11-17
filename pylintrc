@@ -8,7 +8,7 @@ good-names=id
 disable=
   protected-access,
   too-many-instance-attributes,
-  too-few-public-methods
+  too-many-public-methods
 
 
 [EXCEPTIONS]
