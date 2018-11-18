@@ -48,11 +48,11 @@ class TestCamera(LogiUnitTestBase):
                 # the test.
 
                 # Test return of image
-                img = await test_camera.live_stream.get_jpeg()
+                img = await test_camera.live_stream.download_jpeg()
                 self.assertEqual(img, b"Look ma I'm an image")
 
                 # Test download of image to disk
-                await test_camera.live_stream.get_jpeg(filename=TEMP_IMAGE)
+                await test_camera.live_stream.download_jpeg(filename=TEMP_IMAGE)
                 with open(TEMP_IMAGE, 'r') as test_file:
                     data = test_file.read()
                     self.assertEqual(data, "What a purdy picture")
@@ -72,7 +72,7 @@ class TestCamera(LogiUnitTestBase):
 
         async def run_test():
             # Test defaults
-            await test_camera.live_stream.get_jpeg()
+            await test_camera.live_stream.download_jpeg()
 
             self.logi._fetch.assert_called_with(
                 headers=ACCEPT_IMAGE_HEADER,
@@ -82,7 +82,7 @@ class TestCamera(LogiUnitTestBase):
                 url=endpoint)
 
             # Test quality
-            await test_camera.live_stream.get_jpeg(quality=55)
+            await test_camera.live_stream.download_jpeg(quality=55)
             self.logi._fetch.assert_called_with(
                 headers=ACCEPT_IMAGE_HEADER,
                 params={'quality': 55,
@@ -90,7 +90,7 @@ class TestCamera(LogiUnitTestBase):
                 raw=True,
                 url=endpoint)
 
-            await test_camera.live_stream.get_jpeg(refresh=True)
+            await test_camera.live_stream.download_jpeg(refresh=True)
             self.logi._fetch.assert_called_with(
                 headers=ACCEPT_IMAGE_HEADER,
                 params={'quality': DEFAULT_IMAGE_QUALITY,

@@ -2,6 +2,7 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
+import subprocess
 
 from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE, API_BASE, ACCESSORIES_ENDPOINT
 from .auth import AuthProvider
@@ -20,6 +21,7 @@ class LogiCircle():
                  redirect_uri,
                  api_key,
                  scopes=DEFAULT_SCOPES,
+                 ffmpeg_path=None,
                  cache_file=DEFAULT_CACHE_FILE):
         self.auth_provider = AuthProvider(client_id=client_id,
                                           client_secret=client_secret,
@@ -29,6 +31,7 @@ class LogiCircle():
                                           logi_base=self)
         self.authorize = self.auth_provider.authorize
         self.api_key = api_key
+        self.ffmpeg_path = self._get_ffmpeg_path(ffmpeg_path)
         self.is_connected = False
 
     @property
@@ -123,3 +126,16 @@ class LogiCircle():
 
         resp.close()
         return resp_data
+
+    @staticmethod
+    def _get_ffmpeg_path(ffmpeg_path):
+        """Returns a bool indicating whether ffmpeg is installed."""
+        resolved_ffmpeg_path = ffmpeg_path or "ffmpeg"
+        try:
+            subprocess.check_call([resolved_ffmpeg_path, "-version"],
+                                  stdout=subprocess.DEVNULL)
+            return resolved_ffmpeg_path
+        except OSError:
+            _LOGGER.warning(
+                'ffmpeg is not installed! Not all API methods will function.')
+        return None

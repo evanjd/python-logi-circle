@@ -2,6 +2,7 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
+import subprocess
 from .const import (ACCESSORIES_ENDPOINT,
                     LIVE_IMAGE_ENDPOINT,
                     RTSP_ENDPOINT,
@@ -26,10 +27,10 @@ class LiveStream():
         url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.camera_id, LIVE_IMAGE_ENDPOINT)
         return url
 
-    async def get_jpeg(self,
-                       quality=DEFAULT_IMAGE_QUALITY,
-                       refresh=DEFAULT_IMAGE_REFRESH,
-                       filename=None):
+    async def download_jpeg(self,
+                            quality=DEFAULT_IMAGE_QUALITY,
+                            refresh=DEFAULT_IMAGE_REFRESH,
+                            filename=None):
         """Download the most recent snapshot image for this camera"""
 
         url = self.get_jpeg_url()
@@ -54,3 +55,22 @@ class LiveStream():
         # Return time-limited RTSP URI
         rtsp_uri = stream_resp_payload["rtsp_uri"].replace('rtsp://', 'rtsps://')
         return rtsp_uri
+
+    async def download_rtsp(self,
+                            duration,  # in seconds
+                            filename):
+        """Downloads the live stream into a specific file for a specific duration"""
+
+        ffmpeg_bin = self.logi.ffmpeg_path
+
+        # Bail now if ffmpeg is missing
+        if ffmpeg_bin is None:
+            raise RuntimeError(
+                "This method requires ffmpeg to be installed and available from the current execution context.")
+
+        rtsp_uri = await self.get_rtsp_url()
+        subprocess.check_call(
+            [ffmpeg_bin, "-i", rtsp_uri, "-t", str(duration),
+             "-vcodec", "copy", "-acodec", "copy", filename],
+            stderr=subprocess.DEVNULL
+        )
