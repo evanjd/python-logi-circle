@@ -3,9 +3,11 @@
 import json
 import aresponses
 from tests.test_base import LogiUnitTestBase
+from aiohttp.client_exceptions import ClientResponseError
 from logi_circle.camera import Camera
 from logi_circle.const import (API_HOST,
-                               ACCESSORIES_ENDPOINT)
+                               ACCESSORIES_ENDPOINT,
+                               CONFIG_ENDPOINT)
 
 
 class TestCamera(LogiUnitTestBase):
@@ -19,12 +21,12 @@ class TestCamera(LogiUnitTestBase):
         # Mandatory props
         self.assertEqual(test_camera.id, gen1_fixture['accessoryId'])
         self.assertEqual(test_camera.name, gen1_fixture['name'])
-        self.assertEqual(test_camera.is_connected, gen1_fixture['isConnected'])
+        self.assertEqual(test_camera.mac_address, gen1_fixture['mac'])
         gen1_fixture['cfg'] = gen1_fixture['configuration']
 
         # Optional props
         self.assertEqual(test_camera.model, gen1_fixture['modelNumber'])
-        self.assertEqual(test_camera.mac_address, gen1_fixture['mac'])
+        self.assertEqual(test_camera.is_connected, gen1_fixture['isConnected'])
         self.assertEqual(test_camera.streaming_enabled, gen1_fixture['cfg']['streamingEnabled'])
         self.assertEqual(test_camera.timezone, gen1_fixture['cfg']['timeZone'])
         self.assertEqual(test_camera.battery_level, gen1_fixture['cfg']['batteryLevel'])
@@ -57,6 +59,7 @@ class TestCamera(LogiUnitTestBase):
         incomplete_camera = {
             "name": "Incomplete cam",
             "accessoryId": "123",
+            "mac": "ABC",
             "configuration": {
                 "modelNumber": "1234",
                 "batteryLevel": 1
@@ -67,10 +70,9 @@ class TestCamera(LogiUnitTestBase):
         camera = Camera(self.logi, incomplete_camera)
         self.assertEqual(camera.name, "Incomplete cam")
         self.assertEqual(camera.id, "123")
-        self.assertEqual(camera.is_connected, False)
+        self.assertEqual(camera.mac_address, "ABC")
 
         # Optional int/string props not passed to Camera should be None
-        self.assertIsNone(camera.mac_address)
         self.assertIsNone(camera.is_charging)
         self.assertIsNone(camera.battery_saving)
         self.assertIsNone(camera.signal_strength_percentage)
@@ -111,5 +113,66 @@ class TestCamera(LogiUnitTestBase):
                 # Props should have changed.
                 self.assertEqual(test_camera.battery_level, 99)
                 self.assertEqual(test_camera.signal_strength_percentage, 88)
+
+        self.loop.run_until_complete(run_test())
+
+    def test_set_config_valid(self):
+        """Test updating configuration for camera"""
+
+        gen1_fixture = json.loads(self.fixtures['accessories'])[0]
+        test_camera = Camera(self.logi, gen1_fixture)
+        self.logi.auth_provider = self.get_authorized_auth_provider()
+        endpoint = '%s/%s%s' % (ACCESSORIES_ENDPOINT, test_camera.id, CONFIG_ENDPOINT)
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, endpoint, 'put',
+                          aresponses.Response(status=200))
+
+                self.assertEqual(test_camera.streaming_enabled, True)
+
+                # Prop should change when config successfully updated
+                await test_camera.set_config('streaming_enabled', False)
+                self.assertEqual(test_camera.streaming_enabled, False)
+
+        self.loop.run_until_complete(run_test())
+
+    def test_set_config_error(self):
+        """Test updating configuration for camera"""
+
+        gen1_fixture = json.loads(self.fixtures['accessories'])[0]
+        test_camera = Camera(self.logi, gen1_fixture)
+        self.logi.auth_provider = self.get_authorized_auth_provider()
+        endpoint = '%s/%s%s' % (ACCESSORIES_ENDPOINT, test_camera.id, CONFIG_ENDPOINT)
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, endpoint, 'put',
+                          aresponses.Response(status=500))
+
+                self.assertEqual(test_camera.streaming_enabled, True)
+
+                # Prop should not update if PUT request fails
+                with self.assertRaises(ClientResponseError):
+                    await test_camera.set_config('streaming_enabled', False)
+                self.assertEqual(test_camera.streaming_enabled, True)
+
+        self.loop.run_until_complete(run_test())
+
+    def test_set_config_invalid(self):
+        """Test updating invalid configuration prop for camera"""
+
+        gen1_fixture = json.loads(self.fixtures['accessories'])[0]
+        test_camera = Camera(self.logi, gen1_fixture)
+        self.logi.auth_provider = self.get_authorized_auth_provider()
+
+        async def run_test():
+            # Read-only prop
+            with self.assertRaises(NameError):
+                await test_camera.set_config('firmware', 'Windows 95')
+
+            # Non-existent prop
+            with self.assertRaises(NameError):
+                await test_camera.set_config('nonsense', 123)
 
         self.loop.run_until_complete(run_test())

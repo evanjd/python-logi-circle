@@ -115,6 +115,7 @@ class LogiCircle():
             )
         if resp.status == 401 and _reattempt:
             raise AuthorizationFailed('Could not refresh access token')
+        resp.raise_for_status()
 
         if raw:
             # Return unread ClientResponse object to client.

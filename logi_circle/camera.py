@@ -3,7 +3,8 @@
 # vim:sw=4:ts=4:et:
 import logging
 import pytz
-from .const import (ACCESSORIES_ENDPOINT)
+from aiohttp.client_exceptions import ClientResponseError
+from .const import (ACCESSORIES_ENDPOINT, CONFIG_ENDPOINT, PROP_MAP)
 from .live_stream import LiveStream
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,53 +22,59 @@ class Camera():
         self._set_attributes(camera)
 
     def _set_attributes(self, camera):
-        config = None
+        """Sets attrs property based on mapping defined in PROP_MAP constant"""
+        config = camera['configuration']
 
-        # Mandatory attributes
-        try:
-            self._attrs['id'] = camera['accessoryId']
-            self._attrs['name'] = camera['name']
-            self._attrs['is_connected'] = camera['isConnected']
-            config = camera['configuration']
-        except (KeyError, TypeError):
-            _LOGGER.error(
-                'Camera could not be initialised, API did not return one or more required properties.')
-            raise
+        for internal_prop, api_mapping in PROP_MAP.items():
+            base_obj = config if api_mapping.get('config') else camera
+            value = base_obj.get(api_mapping['key'], api_mapping.get('default_value'))
 
-        # Optional attributes
-        self._attrs['model'] = camera.get('modelNumber', 'Unknown')
-        self._attrs['mac_address'] = camera.get('mac', None)
-        self._attrs['streaming_enabled'] = config.get('streamingEnabled', False)
-        self._attrs['timezone'] = config.get('timeZone', 'UTC')
-        self._attrs['battery_level'] = config.get('batteryLevel', None)
-        self._attrs['is_charging'] = config.get('batteryCharging', None)
-        self._attrs['battery_saving'] = config.get('saveBattery', None)
-        self._attrs['signal_strength_percentage'] = config.get(
-            'wifiSignalStrength', None)
-        self._attrs['firmware'] = config.get('firmwareVersion', None)
-        self._attrs['microphone_on'] = config.get('microphoneOn', False)
-        self._attrs['microphone_gain'] = config.get('microphoneGain', None)
-        self._attrs['speaker_on'] = config.get('speakerOn', False)
-        self._attrs['speaker_volume'] = config.get('speakerVolume', None)
-        self._attrs['led_on'] = config.get('ledEnabled', False)
-        self._attrs['privacy_mode'] = config.get('privacyMode', False)
+            if value is None and api_mapping.get('required'):
+                raise KeyError("Mandatory property '%s' missing from camera JSON." %
+                               (api_mapping['key']))
 
-        self._local_tz = pytz.timezone(self._attrs['timezone'])
+            self._attrs[internal_prop] = value
+
+        self._local_tz = pytz.timezone(self.timezone)
+        self._live_stream = LiveStream(logi=self.logi, camera=self)
 
     async def update(self):
         """Poll API for changes to camera properties"""
         _LOGGER.debug('Updating properties for camera %s', self.name)
 
-        url = '%s/%s' % (ACCESSORIES_ENDPOINT, self.id)
+        url = "%s/%s" % (ACCESSORIES_ENDPOINT, self.id)
         camera = await self.logi._fetch(url=url)
         self._set_attributes(camera)
+
+    async def set_config(self, prop, value):
+        """Internal method for updating the camera's configuration."""
+        external_prop = PROP_MAP.get(prop)
+
+        if external_prop is None or not external_prop.get("settable", False):
+            raise NameError("Property '%s' is not settable." % (prop))
+
+        url = "%s/%s%s" % (ACCESSORIES_ENDPOINT, self.id, CONFIG_ENDPOINT)
+        payload = {external_prop['key']: value}
+
+        _LOGGER.debug("Setting %s (%s) to %s", prop, external_prop, str(value))
+
+        try:
+            await self.logi._fetch(
+                url=url,
+                method="PUT",
+                request_body=payload)
+
+            self._attrs[prop] = value
+            _LOGGER.debug("Successfully set %s to %s", prop,
+                          str(value))
+        except ClientResponseError as error:
+            _LOGGER.error(
+                "Status code %s returned when updating %s to %s", error.status, prop, str(value))
+            raise
 
     @property
     def live_stream(self):
         """Return LiveStream class for this camera"""
-        if not self._live_stream:
-            # Cache live stream object
-            self._live_stream = LiveStream(logi=self.logi, camera=self)
         return self._live_stream
 
     @property
