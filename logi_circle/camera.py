@@ -56,7 +56,7 @@ class Camera():
         url = "%s/%s%s" % (ACCESSORIES_ENDPOINT, self.id, CONFIG_ENDPOINT)
         payload = {external_prop['key']: value}
 
-        _LOGGER.debug("Setting %s (%s) to %s", prop, external_prop, str(value))
+        _LOGGER.debug("Setting %s (%s) to %s", prop, external_prop['key'], str(value))
 
         try:
             await self.logi._fetch(

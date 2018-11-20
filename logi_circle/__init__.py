@@ -4,7 +4,7 @@
 import logging
 import subprocess
 
-from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE, API_BASE, ACCESSORIES_ENDPOINT
+from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE, API_BASE, ACCESSORIES_ENDPOINT, DEFAULT_FFMPEG_BIN
 from .auth import AuthProvider
 from .camera import Camera
 from .exception import NotAuthorized, AuthorizationFailed
@@ -129,9 +129,9 @@ class LogiCircle():
         return resp_data
 
     @staticmethod
-    def _get_ffmpeg_path(ffmpeg_path):
+    def _get_ffmpeg_path(ffmpeg_path=None):
         """Returns a bool indicating whether ffmpeg is installed."""
-        resolved_ffmpeg_path = ffmpeg_path or "ffmpeg"
+        resolved_ffmpeg_path = ffmpeg_path or DEFAULT_FFMPEG_BIN
         try:
             subprocess.check_call([resolved_ffmpeg_path, "-version"],
                                   stdout=subprocess.DEVNULL)

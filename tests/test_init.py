@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """The tests for the Logi API platform."""
+from unittest.mock import patch
 import aresponses
 import aiohttp
 from tests.test_base import LogiUnitTestBase
-from logi_circle.const import AUTH_HOST, TOKEN_ENDPOINT, API_HOST, ACCESSORIES_ENDPOINT
+from logi_circle import LogiCircle
+from logi_circle.const import AUTH_HOST, TOKEN_ENDPOINT, API_HOST, ACCESSORIES_ENDPOINT, DEFAULT_FFMPEG_BIN
 from logi_circle.exception import NotAuthorized, AuthorizationFailed
 
 
@@ -139,3 +141,47 @@ class TestAuth(LogiUnitTestBase):
                 self.assertEqual(len(cameras), 3)
 
         self.loop.run_until_complete(run_test())
+    
+    def test_ffmpeg_valid(self):
+        """Resolved ffmpeg path should be set if ffmpeg binary detected"""
+        
+        logi = self.logi
+
+        # Patch subprocess so that it always returns nothing (implicit success)
+        with patch('subprocess.check_call'):
+            # Default value should be used if ffmpeg unset.
+            self.assertEqual(logi._get_ffmpeg_path(), DEFAULT_FFMPEG_BIN)
+
+            # Input ffmpeg_bin should be respected if valid
+            self.assertEqual(logi._get_ffmpeg_path('groovy_ffmpeg'), 'groovy_ffmpeg')
+
+            # Test property on class.
+            logi_default_ffmpeg = LogiCircle(client_id="bud",
+                                     client_secret="wei",
+                                     api_key="serrrrr",
+                                     redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            self.assertEqual(logi_default_ffmpeg.ffmpeg_path, DEFAULT_FFMPEG_BIN)
+            logi_custom_ffmpeg = LogiCircle(client_id="bud",
+                                     client_secret="wei",
+                                     api_key="serrrrr",
+                                     redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                     ffmpeg_path="super_cool_ffmpeg")
+            self.assertEqual(logi_custom_ffmpeg.ffmpeg_path, "super_cool_ffmpeg")
+            
+    def test_ffmpeg_invalid(self):
+        """Resolved ffmpeg path should None if ffmpeg missing"""
+
+        logi = self.logi
+
+        # Test function
+        ffmpeg_path = logi._get_ffmpeg_path('this-is-not-ffmpeg')
+        self.assertIsNone(ffmpeg_path)
+
+        # Test property on class.
+        logi_bad_ffmpeg = LogiCircle(client_id="bud",
+                                     client_secret="wei",
+                                     api_key="serrrrr",
+                                     redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                     ffmpeg_path="this-still-is-not-ffmpeg")
+
+        self.assertIsNone(logi_bad_ffmpeg.ffmpeg_path)

@@ -91,6 +91,31 @@ class TestCamera(LogiUnitTestBase):
         # Timezone should fallback to UTC
         self.assertEqual(camera.timezone, "UTC")
 
+    def test_signal_strength_categories(self):
+        """Test friendly signal strength categorisation"""
+
+        gen1_fixture = json.loads(self.fixtures['accessories'])[0]
+        test_camera = Camera(self.logi, gen1_fixture)
+        self.logi.auth_provider = self.get_authorized_auth_provider()
+
+        test_camera._attrs['signal_strength_percentage'] = 99
+        self.assertEqual(test_camera.signal_strength_category, 'Excellent')
+
+        test_camera._attrs['signal_strength_percentage'] = 79
+        self.assertEqual(test_camera.signal_strength_category, 'Good')
+
+        test_camera._attrs['signal_strength_percentage'] = 59
+        self.assertEqual(test_camera.signal_strength_category, 'Fair')
+
+        test_camera._attrs['signal_strength_percentage'] = 39
+        self.assertEqual(test_camera.signal_strength_category, 'Poor')
+
+        test_camera._attrs['signal_strength_percentage'] = 19
+        self.assertEqual(test_camera.signal_strength_category, 'Bad')
+
+        test_camera._attrs['signal_strength_percentage'] = None
+        self.assertIsNone(test_camera.signal_strength_category)
+
     def test_update(self):
         """Test polling for changes in camera properties"""
 

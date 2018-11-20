@@ -1,7 +1,7 @@
 """The tests for the Logi API platform."""
 import json
 import os
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import aresponses
 from tests.test_base import LogiUnitTestBase
 from logi_circle.camera import Camera
@@ -11,7 +11,8 @@ from logi_circle.const import (API_HOST,
                                LIVE_IMAGE_ENDPOINT,
                                ACCEPT_IMAGE_HEADER,
                                DEFAULT_IMAGE_QUALITY,
-                               DEFAULT_IMAGE_REFRESH)
+                               DEFAULT_IMAGE_REFRESH,
+                               DEFAULT_FFMPEG_BIN)
 from .helpers import async_return, FakeStream
 TEMP_IMAGE = 'temp.jpg'
 
@@ -119,3 +120,44 @@ class TestCamera(LogiUnitTestBase):
                 self.assertEqual(expected_rtsp_uri, rtsp_uri)
 
         self.loop.run_until_complete(run_test())
+    
+    def test_get_download_rtsp(self):
+        """Test download of RTSP stream"""
+
+        gen1_fixture = json.loads(self.fixtures['accessories'])[0]
+        test_camera = Camera(self.logi, gen1_fixture)
+
+        TEST_RTSP_URL = 'rtsps://woop.woop.com/abc123'
+        TEST_DURATION = 915
+        TEST_FILENAME = 'test.mp4'
+        TEST_FFMPEG_BIN = '/mock/ffmpeg'
+
+        test_camera.live_stream.get_rtsp_url = MagicMock(
+            return_value=async_return(TEST_RTSP_URL))
+        
+        async def run_test():
+            with patch('subprocess.check_call') as mock_subprocess:
+                self.logi.ffmpeg_path = TEST_FFMPEG_BIN
+                await test_camera.live_stream.download_rtsp(duration=TEST_DURATION,
+                                                            filename=TEST_FILENAME)
+
+                # Check ffmpeg bin is first argument
+                self.assertEqual(mock_subprocess.call_args[0][0][0], TEST_FFMPEG_BIN)
+
+                # Test RTSP URI is somewhere in the call
+                self.assertIn(TEST_RTSP_URL, mock_subprocess.call_args[0][0])
+
+                # Test duration is somewhere in the call
+                self.assertIn(str(TEST_DURATION), mock_subprocess.call_args[0][0])
+
+                # Test filename is somewhere in the call
+                self.assertIn(TEST_FILENAME, mock_subprocess.call_args[0][0])
+
+            # Download should raise if ffmpeg not detected
+            self.logi.ffmpeg_path = None
+            with self.assertRaises(RuntimeError):
+                await test_camera.live_stream.download_rtsp(duration=TEST_DURATION,
+                                                        filename=TEST_FILENAME)
+
+        self.loop.run_until_complete(run_test())
+

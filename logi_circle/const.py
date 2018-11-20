@@ -31,6 +31,7 @@ ACCEPT_IMAGE_HEADER = {'Accept': 'image/jpeg'}
 # Misc
 DEFAULT_IMAGE_QUALITY = 75
 DEFAULT_IMAGE_REFRESH = False
+DEFAULT_FFMPEG_BIN = "ffmpeg"
 
 # Prop to API mapping
 PROP_MAP = {
