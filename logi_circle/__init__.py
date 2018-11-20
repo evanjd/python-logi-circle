@@ -88,13 +88,28 @@ class LogiCircle():
 
         # Perform request
         if method == 'GET':
-            resp = await session.get(resolved_url, headers=request_headers, params=params)
+            resp = await session.get(resolved_url,
+                                     headers=request_headers,
+                                     params=params,
+                                     allow_redirects=False)
         elif method == 'POST':
-            resp = await session.post(resolved_url, headers=request_headers, params=params, json=request_body)
+            resp = await session.post(resolved_url,
+                                      headers=request_headers,
+                                      params=params,
+                                      json=request_body,
+                                      allow_redirects=False)
         elif method == 'PUT':
-            resp = await session.put(resolved_url, headers=request_headers, params=params, json=request_body)
+            resp = await session.put(resolved_url,
+                                     headers=request_headers,
+                                     params=params,
+                                     json=request_body,
+                                     allow_redirects=False)
         elif method == 'DELETE':
-            resp = await session.delete(resolved_url, headers=request_headers, params=params, json=request_body)
+            resp = await session.delete(resolved_url,
+                                        headers=request_headers,
+                                        params=params,
+                                        json=request_body,
+                                        allow_redirects=False)
         else:
             raise ValueError('Method %s not supported.' % (method))
 
@@ -102,6 +117,17 @@ class LogiCircle():
 
         _LOGGER.debug('Request %s (%s) returned %s with content type %s',
                       resolved_url, method, resp.status, content_type)
+
+        if resp.status == 301 or resp.status == 302:
+            redirect_uri = resp.headers['location']
+            return await self._fetch(
+                url=redirect_uri,
+                method=method,
+                params=params,
+                request_body=request_body,
+                relative_to_api_root=False,
+                raw=raw
+            )
 
         if resp.status == 401 and not _reattempt:
             # Token may have expired. Refresh and try again.
