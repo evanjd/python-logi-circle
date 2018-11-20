@@ -21,17 +21,24 @@ DEFAULT_SCOPES = ("circle:activities_basic circle:activities circle:accessories 
 API_HOST = "api.circle.logi.com"
 API_BASE = "https://%s" % (API_HOST)
 ACCESSORIES_ENDPOINT = "/api/accessories"
+ACTIVITIES_ENDPOINT = "/activities"
 CONFIG_ENDPOINT = "/config"
 LIVE_IMAGE_ENDPOINT = "/live/image"
-RTSP_ENDPOINT = "/live/rtsp"
+LIVE_RTSP_ENDPOINT = "/live/rtsp"
+ACTIVITY_IMAGE_ENDPOINT = "/image"
+ACTIVITY_MP4_ENDPOINT = "/mp4"
+ACTIVITY_DASH_ENDPOINT = "/mpd"
+ACTIVITY_HLS_ENDPOINT = "/hls/activity.m3u8"
 
 # Headers
-ACCEPT_IMAGE_HEADER = {'Accept': 'image/jpeg'}
+ACCEPT_IMAGE_HEADER = {"Accept": "image/jpeg"}
+ACCEPT_VIDEO_HEADER = {"Accept": "video/mp4"}
 
 # Misc
 DEFAULT_IMAGE_QUALITY = 75
 DEFAULT_IMAGE_REFRESH = False
 DEFAULT_FFMPEG_BIN = "ffmpeg"
+ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%SZ'
 
 # Prop to API mapping
 PROP_MAP = {

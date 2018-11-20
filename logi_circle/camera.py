@@ -2,10 +2,12 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
+from datetime import datetime
 import pytz
 from aiohttp.client_exceptions import ClientResponseError
-from .const import (ACCESSORIES_ENDPOINT, CONFIG_ENDPOINT, PROP_MAP)
+from .const import (ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, CONFIG_ENDPOINT, PROP_MAP)
 from .live_stream import LiveStream
+from .activity import Activity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,6 +73,66 @@ class Camera():
             _LOGGER.error(
                 "Status code %s returned when updating %s to %s", error.status, prop, str(value))
             raise
+
+    async def query_activity_history(self, property_filter=None, date_filter=None, date_operator='<=', limit=100):
+        """Filter the activity history, returning Activity objects for any matching result."""
+
+        if limit > 100:
+            # Logi Circle API rejects requests where the limit exceeds 100, so we'll guard for that here.
+            raise ValueError(
+                'Limit may not exceed 100 due to API restrictions.')
+        if date_filter is not None and not isinstance(date_filter, datetime):
+            raise ValueError('date_filter must be a datetime object.')
+
+        # Base payload object
+        payload = {
+            'limit': limit,
+            'scanDirectionNewer': True
+        }
+        if date_filter:
+            # Date filters are expressed using the same format for activity ID keys (YYYYMMDD"T"HHMMSSZ).
+            # Let's convert our date_filter to match.
+
+            # If timezone unaware, assume it's local to the camera's timezone.
+            date_filter_tz = date_filter.tzinfo or self._local_tz
+
+            # Activity ID keys are always expressed in UTC, so cast to UTC first.
+            utc_date_filter = date_filter.replace(
+                tzinfo=date_filter_tz).astimezone(pytz.utc)
+            payload['startActivityId'] = utc_date_filter.strftime(
+                '%Y%m%dT%H%M%SZ')
+
+            payload['operator'] = date_operator
+
+        if property_filter:
+            payload['filter'] = property_filter
+
+        url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.id, ACTIVITIES_ENDPOINT)
+
+        raw_activitites = await self.logi._fetch(
+            url=url, method='POST', request_body=payload)
+
+        activities = []
+        for raw_activity in raw_activitites['activities']:
+            activity = Activity(camera=self,
+                                activity=raw_activity,
+                                url=url,
+                                local_tz=self._local_tz,
+                                logi=self.logi)
+            activities.append(activity)
+
+        return activities
+
+    @property
+    async def last_activity(self):
+        """Returns the most recent activity as an Activity object."""
+        activity = await self.query_activity_history(limit=1)
+
+        try:
+            return activity[0]
+        except IndexError:
+            # If there's no activity history for this camera at all.
+            return None
 
     @property
     def live_stream(self):

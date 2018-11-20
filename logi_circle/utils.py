@@ -12,7 +12,7 @@ def _write_to_file(data, filename, open_mode='wb'):  # pragma: no cover
         file_handle.write(data)
 
 
-async def _stream_to_file(stream, filename, open_mode='wb'):  # pragma: no cover
+async def _stream_to_file(stream, filename, open_mode='wb'):
     """Stream aiohttp response to file."""
     with open(filename, open_mode) as file_handle:
         while True:

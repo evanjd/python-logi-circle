@@ -7,7 +7,7 @@ from tests.test_base import LogiUnitTestBase
 from logi_circle.camera import Camera
 from logi_circle.const import (API_HOST,
                                ACCESSORIES_ENDPOINT,
-                               RTSP_ENDPOINT,
+                               LIVE_RTSP_ENDPOINT,
                                LIVE_IMAGE_ENDPOINT,
                                ACCEPT_IMAGE_HEADER,
                                DEFAULT_IMAGE_QUALITY,
@@ -106,7 +106,7 @@ class TestCamera(LogiUnitTestBase):
 
         gen1_fixture = json.loads(self.fixtures['accessories'])[0]
         test_camera = Camera(self.logi, gen1_fixture)
-        endpoint = '%s/%s%s' % (ACCESSORIES_ENDPOINT, test_camera.id, RTSP_ENDPOINT)
+        endpoint = '%s/%s%s' % (ACCESSORIES_ENDPOINT, test_camera.id, LIVE_RTSP_ENDPOINT)
         expected_rtsp_uri = json.loads(self.fixtures['rtsp_uri'])['rtsp_uri'].replace('rtsp:', 'rtsps:')
 
         async def run_test():

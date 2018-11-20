@@ -93,6 +93,8 @@ class LogiCircle():
             resp = await session.post(resolved_url, headers=request_headers, params=params, json=request_body)
         elif method == 'PUT':
             resp = await session.put(resolved_url, headers=request_headers, params=params, json=request_body)
+        elif method == 'DELETE':
+            resp = await session.delete(resolved_url, headers=request_headers, params=params, json=request_body)
         else:
             raise ValueError('Method %s not supported.' % (method))
 

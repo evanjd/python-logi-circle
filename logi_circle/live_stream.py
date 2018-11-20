@@ -5,7 +5,7 @@ import logging
 import subprocess
 from .const import (ACCESSORIES_ENDPOINT,
                     LIVE_IMAGE_ENDPOINT,
-                    RTSP_ENDPOINT,
+                    LIVE_RTSP_ENDPOINT,
                     ACCEPT_IMAGE_HEADER,
                     DEFAULT_IMAGE_QUALITY,
                     DEFAULT_IMAGE_REFRESH)
@@ -34,10 +34,9 @@ class LiveStream():
         """Download the most recent snapshot image for this camera"""
 
         url = self.get_jpeg_url()
-        accept_header = ACCEPT_IMAGE_HEADER
         params = {'quality': quality, 'refresh': str(refresh).lower()}
 
-        image = await self.logi._fetch(url=url, raw=True, headers=accept_header, params=params)
+        image = await self.logi._fetch(url=url, raw=True, headers=ACCEPT_IMAGE_HEADER, params=params)
         if filename:
             await _stream_to_file(image.content, filename)
             image.close()
@@ -49,7 +48,7 @@ class LiveStream():
     async def get_rtsp_url(self):
         """Get RTSP stream URL."""
         # Request RTSP stream
-        url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.camera_id, RTSP_ENDPOINT)
+        url = '%s/%s%s' % (ACCESSORIES_ENDPOINT, self.camera_id, LIVE_RTSP_ENDPOINT)
         stream_resp_payload = await self.logi._fetch(url=url)
 
         # Return time-limited RTSP URI
