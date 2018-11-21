@@ -114,8 +114,7 @@ class Camera():
 
         activities = []
         for raw_activity in raw_activitites['activities']:
-            activity = Activity(camera=self,
-                                activity=raw_activity,
+            activity = Activity(activity=raw_activity,
                                 url=url,
                                 local_tz=self._local_tz,
                                 logi=self.logi)

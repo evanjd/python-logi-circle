@@ -2,8 +2,8 @@
 """The tests for the Logi API platform."""
 import json
 import aresponses
-from tests.test_base import LogiUnitTestBase
 from aiohttp.client_exceptions import ClientResponseError
+from tests.test_base import LogiUnitTestBase
 from logi_circle.camera import Camera
 from logi_circle.const import (API_HOST,
                                ACCESSORIES_ENDPOINT,

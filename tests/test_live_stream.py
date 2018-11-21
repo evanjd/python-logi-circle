@@ -22,6 +22,13 @@ class TestCamera(LogiUnitTestBase):
 
     def cleanup(self):
         """Cleanup any data created from the tests."""
+        async def close_session():
+            await self.logi.close()
+
+        self.loop.run_until_complete(close_session())
+
+        self.loop.close()
+        self.logi = None
         if os.path.isfile(TEMP_IMAGE):
             os.remove(TEMP_IMAGE)
 
@@ -120,7 +127,7 @@ class TestCamera(LogiUnitTestBase):
                 self.assertEqual(expected_rtsp_uri, rtsp_uri)
 
         self.loop.run_until_complete(run_test())
-    
+
     def test_get_download_rtsp(self):
         """Test download of RTSP stream"""
 
@@ -134,7 +141,7 @@ class TestCamera(LogiUnitTestBase):
 
         test_camera.live_stream.get_rtsp_url = MagicMock(
             return_value=async_return(TEST_RTSP_URL))
-        
+
         async def run_test():
             with patch('subprocess.check_call') as mock_subprocess:
                 self.logi.ffmpeg_path = TEST_FFMPEG_BIN
@@ -157,7 +164,6 @@ class TestCamera(LogiUnitTestBase):
             self.logi.ffmpeg_path = None
             with self.assertRaises(RuntimeError):
                 await test_camera.live_stream.download_rtsp(duration=TEST_DURATION,
-                                                        filename=TEST_FILENAME)
+                                                            filename=TEST_FILENAME)
 
         self.loop.run_until_complete(run_test())
-

@@ -20,9 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 class Activity():
     """Generic implementation for a Logi Circle activity."""
 
-    def __init__(self, camera, activity, url, local_tz, logi):
+    def __init__(self, activity, url, local_tz, logi):
         """Initialize Activity object."""
-        self._camera = camera
         self._logi = logi
         self._attrs = {}
         self._local_tz = local_tz
@@ -71,25 +70,25 @@ class Activity():
 
     async def download_jpeg(self, filename=None):
         """Download the activity as a JPEG, optionally saving to disk."""
-        await self._get_file(url=self.jpeg_url,
-                             filename=filename,
-                             accept_header=ACCEPT_IMAGE_HEADER)
+        return await self._get_file(url=self.jpeg_url,
+                                    filename=filename,
+                                    accept_header=ACCEPT_IMAGE_HEADER)
 
     async def download_mp4(self, filename=None):
         """Download the activity as an MP4, optionally saving to disk."""
-        await self._get_file(url=self.mp4_url,
-                             filename=filename,
-                             accept_header=ACCEPT_VIDEO_HEADER)
+        return await self._get_file(url=self.mp4_url,
+                                    filename=filename,
+                                    accept_header=ACCEPT_VIDEO_HEADER)
 
     async def download_hls(self, filename=None):
         """Download the activity's HLS playlist, optionally saving to disk."""
-        await self._get_file(url=self.hls_url,
-                             filename=filename)
+        return await self._get_file(url=self.hls_url,
+                                    filename=filename)
 
     async def download_dash(self, filename=None):
         """Download the activity's DASH manifest, optionally saving to disk."""
-        await self._get_file(url=self.dash_url,
-                             filename=filename)
+        return await self._get_file(url=self.dash_url,
+                                    filename=filename)
 
     async def _get_file(self, url, filename=None, accept_header=None):
         """Download the specified URL, optionally saving to disk."""
