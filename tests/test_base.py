@@ -37,6 +37,7 @@ class LogiUnitTestBase(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
 
     def get_authorized_auth_provider(self):
+        """Returns a pre-authorized AuthProvider instance"""
         auth_fixture = json.loads(self.fixtures['auth_code'])
         token = {}
         token[self.client_id] = auth_fixture

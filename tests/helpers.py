@@ -28,9 +28,12 @@ def async_return(result):
 
 
 class FakeStream():
-
+    """Mocks a stream returned by aiohttp"""
     async def read(self):
+        """Mock read method"""
         return b'123'
 
     def close(self):
+        """Mock close method"""
+        # pylint: disable=no-self-use
         return True

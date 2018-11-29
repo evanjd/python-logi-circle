@@ -5,7 +5,11 @@ import logging
 from datetime import datetime
 import pytz
 from aiohttp.client_exceptions import ClientResponseError
-from .const import (ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT, CONFIG_ENDPOINT, PROP_MAP)
+from .const import (ACCESSORIES_ENDPOINT,
+                    ACTIVITIES_ENDPOINT,
+                    CONFIG_ENDPOINT,
+                    PROP_MAP,
+                    ACTIVITY_API_LIMIT)
 from .live_stream import LiveStream
 from .activity import Activity
 
@@ -74,15 +78,19 @@ class Camera():
                 "Status code %s returned when updating %s to %s", error.status, prop, str(value))
             raise
 
-    async def query_activity_history(self, property_filter=None, date_filter=None, date_operator='<=', limit=100):
+    async def query_activity_history(self,
+                                     property_filter=None,
+                                     date_filter=None,
+                                     date_operator='<=',
+                                     limit=ACTIVITY_API_LIMIT):
         """Filter the activity history, returning Activity objects for any matching result."""
 
-        if limit > 100:
+        if limit > ACTIVITY_API_LIMIT:
             # Logi Circle API rejects requests where the limit exceeds 100, so we'll guard for that here.
             raise ValueError(
-                'Limit may not exceed 100 due to API restrictions.')
+                'Limit may not exceed %s due to API restrictions.' % (ACTIVITY_API_LIMIT))
         if date_filter is not None and not isinstance(date_filter, datetime):
-            raise ValueError('date_filter must be a datetime object.')
+            raise TypeError('date_filter must be a datetime object.')
 
         # Base payload object
         payload = {

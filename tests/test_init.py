@@ -141,10 +141,10 @@ class TestAuth(LogiUnitTestBase):
                 self.assertEqual(len(cameras), 3)
 
         self.loop.run_until_complete(run_test())
-    
+
     def test_ffmpeg_valid(self):
         """Resolved ffmpeg path should be set if ffmpeg binary detected"""
-        
+
         logi = self.logi
 
         # Patch subprocess so that it always returns nothing (implicit success)
@@ -157,17 +157,17 @@ class TestAuth(LogiUnitTestBase):
 
             # Test property on class.
             logi_default_ffmpeg = LogiCircle(client_id="bud",
-                                     client_secret="wei",
-                                     api_key="serrrrr",
-                                     redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                                             client_secret="wei",
+                                             api_key="serrrrr",
+                                             redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
             self.assertEqual(logi_default_ffmpeg.ffmpeg_path, DEFAULT_FFMPEG_BIN)
             logi_custom_ffmpeg = LogiCircle(client_id="bud",
-                                     client_secret="wei",
-                                     api_key="serrrrr",
-                                     redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                                     ffmpeg_path="super_cool_ffmpeg")
+                                            client_secret="wei",
+                                            api_key="serrrrr",
+                                            redirect_uri="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                                            ffmpeg_path="super_cool_ffmpeg")
             self.assertEqual(logi_custom_ffmpeg.ffmpeg_path, "super_cool_ffmpeg")
-            
+
     def test_ffmpeg_invalid(self):
         """Resolved ffmpeg path should None if ffmpeg missing"""
 
