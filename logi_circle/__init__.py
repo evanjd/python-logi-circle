@@ -119,12 +119,16 @@ class LogiCircle():
                       resolved_url, method, resp.status, content_type)
 
         if resp.status == 301 or resp.status == 302:
+            # We need to implement our own redirect handling - Logi API
+            # requires auth headers to passed to the redirected resource, but
+            # aiohttp doesn't do this.
             redirect_uri = resp.headers['location']
             return await self._fetch(
                 url=redirect_uri,
                 method=method,
                 params=params,
                 request_body=request_body,
+                headers=headers,
                 relative_to_api_root=False,
                 raw=raw
             )

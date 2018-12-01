@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """The tests for the Logi API platform."""
 import json
+import os
 from unittest.mock import MagicMock
 from datetime import datetime
 import pytz
+import aresponses
 from tests.test_base import LogiUnitTestBase
 from logi_circle.activity import Activity
 from logi_circle.const import (API_BASE,
@@ -18,6 +20,7 @@ from .helpers import async_return
 
 BASE_ACTIVITY_URL = '/abc123'
 TEST_TZ = 'Etc/GMT+10'
+TEMP_FILE = 'temp.mp4'
 
 
 class TestActivity(LogiUnitTestBase):
@@ -38,6 +41,12 @@ class TestActivity(LogiUnitTestBase):
         super(TestActivity, self).tearDown()
         del self.activity_json
         del self.activity
+
+    def cleanup(self):
+        """Cleanup any assets downloaded as part of the unit tests."""
+        super(TestActivity, self).cleanup()
+        if os.path.isfile(TEMP_FILE):
+            os.remove(TEMP_FILE)
 
     def test_activity_props(self):
         """Test props match fixture"""
@@ -89,5 +98,34 @@ class TestActivity(LogiUnitTestBase):
             await self.activity.download_hls(my_file)
             self.activity._get_file.assert_called_with(url=self.activity.hls_url,
                                                        filename=my_file)
+
+        self.loop.run_until_complete(run_test())
+
+    def test_get_file(self):
+        """Test get file utility function."""
+
+        self.logi.auth_provider = self.get_authorized_auth_provider()
+        test_file_endpoint = '/coolfile.mp4'
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add('myfile.com', test_file_endpoint, 'get',
+                          aresponses.Response(status=200,
+                                              text='123456',
+                                              headers={'content-type': 'application/octet-stream'}))
+                arsps.add('myfile.com', test_file_endpoint, 'get',
+                          aresponses.Response(status=200,
+                                              text='789012',
+                                              headers={'content-type': 'application/octet-stream'}))
+
+                # Should serve file as bytes object if filename parameter not specified
+                myfile = await self.activity._get_file('https://myfile.com/coolfile.mp4')
+                self.assertEqual(myfile, b'123456')
+
+                # Should download file
+                await self.activity._get_file('https://myfile.com/coolfile.mp4', TEMP_FILE)
+                with open(TEMP_FILE, 'r') as test_file:
+                    data = test_file.read()
+                    self.assertEqual(data, "789012")
 
         self.loop.run_until_complete(run_test())

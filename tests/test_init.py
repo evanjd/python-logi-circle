@@ -41,12 +41,18 @@ class TestAuth(LogiUnitTestBase):
                           aresponses.Response(status=200,
                                               text='{ "success" : true }',
                                               headers={'content-type': 'application/json'}))
+                arsps.add(API_HOST, '/api', 'delete',
+                          aresponses.Response(status=200,
+                                              text='{ "success" : true }',
+                                              headers={'content-type': 'application/json'}))
                 get_result = await logi._fetch(url='/api')
                 post_result = await logi._fetch(url='/api', method='POST')
                 put_result = await logi._fetch(url='/api', method='PUT')
+                delete_result = await logi._fetch(url='/api', method='DELETE')
                 self.assertEqual(get_result['abc'], 123)
                 self.assertEqual(post_result['foo'], 'bar')
                 self.assertTrue(put_result['success'])
+                self.assertTrue(delete_result['success'])
 
         self.loop.run_until_complete(run_test())
 
@@ -122,6 +128,44 @@ class TestAuth(LogiUnitTestBase):
         async def run_test():
             with self.assertRaises(ValueError):
                 await logi._fetch(url='/api', method='TEAPOT')
+
+        self.loop.run_until_complete(run_test())
+
+    def test_fetch_follow_redirect(self):
+        """Fetch should follow redirects"""
+
+        logi = self.logi
+        logi.auth_provider = self.get_authorized_auth_provider()
+
+        expected_response = 'you made it!'
+        fetch_method = 'GET'
+        fetch_headers = {'beep': 'boop'}
+        fetch_params = {'janeway': 'pie'}
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, '/api', 'get',
+                          aresponses.Response(status=301,
+                                              headers={'location': 'https://overhere.com/resource'}))
+                arsps.add('overhere.com', '/resource', 'get',
+                          aresponses.Response(status=200,
+                                              text=expected_response,
+                                              headers={'content-type': 'text/plain'}))
+
+                with patch.object(logi, '_fetch', wraps=logi._fetch) as mock_fetch:
+                    test_req = await logi._fetch(url='/api',
+                                                 method=fetch_method,
+                                                 headers=fetch_headers,
+                                                 params=fetch_params)
+                    # Should return response from redirect
+                    self.assertEqual(test_req, expected_response.encode())
+                    # Should call fetch twice (initial redirect, resouce URL)
+                    self.assertEqual(mock_fetch.call_count, 2)
+                    # Params should be the same for redirected call (except URL)
+                    for call in mock_fetch.call_args_list:
+                        self.assertEqual(call[1].get('method'), fetch_method)
+                        self.assertEqual(call[1].get('headers'), fetch_headers)
+                        self.assertEqual(call[1].get('params'), fetch_params)
 
         self.loop.run_until_complete(run_test())
 
