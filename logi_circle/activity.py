@@ -4,9 +4,15 @@
 from datetime import datetime, timedelta
 import logging
 import pytz
-from .const import (ISO8601_FORMAT_MASK, VIDEO_CONTENT_TYPE, API_URI)
+from .const import (ISO8601_FORMAT_MASK,
+                    API_BASE,
+                    ACCEPT_IMAGE_HEADER,
+                    ACCEPT_VIDEO_HEADER,
+                    ACTIVITY_IMAGE_ENDPOINT,
+                    ACTIVITY_MP4_ENDPOINT,
+                    ACTIVITY_DASH_ENDPOINT,
+                    ACTIVITY_HLS_ENDPOINT)
 from .utils import _stream_to_file
-from .exception import UnexpectedContentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,14 +20,13 @@ _LOGGER = logging.getLogger(__name__)
 class Activity():
     """Generic implementation for a Logi Circle activity."""
 
-    def __init__(self, camera, activity, url, local_tz, logi):
+    def __init__(self, activity, url, local_tz, logi):
         """Initialize Activity object."""
-        self._camera = camera
         self._logi = logi
         self._attrs = {}
         self._local_tz = local_tz
-        self._url = url
         self._set_attributes(activity)
+        self._base_url = '%s%s/%s' % (API_BASE, url, self.activity_id)
 
     def _set_attributes(self, activity):
         self._attrs['activity_id'] = activity['activityId']
@@ -44,31 +49,63 @@ class Activity():
         self._attrs['duration'] = timedelta(milliseconds=raw_duration)
 
     @property
-    def download_url(self):
-        """Returns the download URL for the current activity."""
-        return '%s%s/%s/mp4' % (API_URI, self._url, self.activity_id)
+    def jpeg_url(self):
+        """Returns the JPEG download URL for the current activity."""
+        return '%s%s' % (self._base_url, ACTIVITY_IMAGE_ENDPOINT)
 
-    async def download(self, filename=None):
+    @property
+    def mp4_url(self):
+        """Returns the MP4 download URL for the current activity."""
+        return '%s%s' % (self._base_url, ACTIVITY_MP4_ENDPOINT)
+
+    @property
+    def hls_url(self):
+        """Returns the HLS playlist download URL for the current activity."""
+        return '%s%s' % (self._base_url, ACTIVITY_HLS_ENDPOINT)
+
+    @property
+    def dash_url(self):
+        """Returns the DASH manifest download URL for the current activity."""
+        return '%s%s' % (self._base_url, ACTIVITY_DASH_ENDPOINT)
+
+    async def download_jpeg(self, filename=None):
+        """Download the activity as a JPEG, optionally saving to disk."""
+        return await self._get_file(url=self.jpeg_url,
+                                    filename=filename,
+                                    accept_header=ACCEPT_IMAGE_HEADER)
+
+    async def download_mp4(self, filename=None):
         """Download the activity as an MP4, optionally saving to disk."""
-        url = self.download_url
+        return await self._get_file(url=self.mp4_url,
+                                    filename=filename,
+                                    accept_header=ACCEPT_VIDEO_HEADER)
 
-        video = await self._logi._fetch(url=url, method='GET', raw=True, relative_to_api_root=False)
+    async def download_hls(self, filename=None):
+        """Download the activity's HLS playlist, optionally saving to disk."""
+        return await self._get_file(url=self.hls_url,
+                                    filename=filename)
 
-        if video.content_type == VIDEO_CONTENT_TYPE:
-            # Got a video!
-            if filename:
-                # Stream to file
-                await _stream_to_file(video.content, filename)
-                video.close()
-            else:
-                # Return binary object
-                content = await video.read()
-                video.close()
-                return content
+    async def download_dash(self, filename=None):
+        """Download the activity's DASH manifest, optionally saving to disk."""
+        return await self._get_file(url=self.dash_url,
+                                    filename=filename)
+
+    async def _get_file(self, url, filename=None, accept_header=None):
+        """Download the specified URL, optionally saving to disk."""
+        asset = await self._logi._fetch(url=url,
+                                        headers=accept_header,
+                                        raw=True,
+                                        relative_to_api_root=False)
+
+        if filename:
+            # Stream to file
+            await _stream_to_file(asset.content, filename)
+            asset.close()
         else:
-            _LOGGER.error('Expected content-type %s, got %s when retrieving activity video.',
-                          VIDEO_CONTENT_TYPE, video.content_type)
-            raise UnexpectedContentType()
+            # Return binary object
+            content = await asset.read()
+            asset.close()
+            return content
 
     @property
     def activity_id(self):

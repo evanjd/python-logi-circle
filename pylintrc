@@ -1,10 +1,15 @@
 [MASTER]
 reports=no
 max-line-length=120
+max-args=8
 good-names=id
 
+
 disable=
-  W0212 #
+  protected-access,
+  too-many-instance-attributes,
+  too-many-public-methods
+
 
 [EXCEPTIONS]
 overgeneral-exceptions=Exception

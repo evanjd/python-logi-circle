@@ -6,6 +6,13 @@
       "startTime": "2018-01-01T07:17:00Z",
       "endTime": "2018-01-01T07:18:00Z",
       "relevanceLevel": 0
+    },
+    {
+      "activityId": "20180102T071700Z",
+      "playbackDuration": 30000,
+      "startTime": "2018-01-02T07:17:00Z",
+      "endTime": "2018-01-02T07:18:00Z",
+      "relevanceLevel": 1
     }
   ]
 }

@@ -1,195 +1,174 @@
-"""Logi API"""
+"""Python wrapper for the official Logi Circle API"""
 # coding: utf-8
 # vim:sw=4:ts=4:et:
-import sys
 import logging
-import json
-import aiohttp
+import subprocess
 
-
-from .utils import _get_session_cookie, _handle_response, _exists_cache, _save_cache, _read_cache, _clean_cache
-from .const import (
-    API_URI, AUTH_ENDPOINT, CACHE_ATTRS, CACHE_FILE, CAMERAS_ENDPOINT, COOKIE_NAME, VALIDATE_ENDPOINT, HEADERS)
+from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE, API_BASE, ACCESSORIES_ENDPOINT, DEFAULT_FFMPEG_BIN
+from .auth import AuthProvider
 from .camera import Camera
-from .exception import BadSession, NoSession, BadCache, BadLogin
+from .exception import NotAuthorized, AuthorizationFailed
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Logi():
+class LogiCircle():
     """A Python abstraction object to Logi Circle cameras."""
 
-    def __init__(self, username, password, reuse_session=True, cache_file=CACHE_FILE):
+    def __init__(self,
+                 client_id,
+                 client_secret,
+                 redirect_uri,
+                 api_key,
+                 scopes=DEFAULT_SCOPES,
+                 ffmpeg_path=None,
+                 cache_file=DEFAULT_CACHE_FILE):
+        self.auth_provider = AuthProvider(client_id=client_id,
+                                          client_secret=client_secret,
+                                          redirect_uri=redirect_uri,
+                                          scopes=scopes,
+                                          cache_file=cache_file,
+                                          logi_base=self)
+        self.authorize = self.auth_provider.authorize
+        self.api_key = api_key
+        self.ffmpeg_path = self._get_ffmpeg_path(ffmpeg_path)
         self.is_connected = False
-        self.params = None
-        self.username = username
-        self.password = password
 
-        self._session = None
-        self._cache = CACHE_ATTRS
-        self._cache_file = cache_file
-        self._reuse_session = reuse_session
+    @property
+    def authorized(self):
+        """Checks if the current client ID has a refresh token"""
+        return self.auth_provider.authorized
 
-    async def login(self):
-        """Create a session with the Logi Circle API"""
-        # Close current session before creating a new one
-        if isinstance(self._session, aiohttp.ClientSession):
-            await self._session.close()
+    @property
+    def authorize_url(self):
+        """Returns the authorization URL for the Logi Circle API"""
+        return self.auth_provider.authorize_url
 
-        if self._reuse_session:
-            try:
-                # Restore cached cookie and validate.
-                await self._restore_cached_session()
-            except BadCache:
-                # Fall back to authentication if restoring the cached session fails.
-                await self._authenticate()
-        else:
-            await self._authenticate()
+    async def close(self):
+        """Closes the aiohttp session"""
+        await self.auth_provider.close()
 
-    async def logout(self):
-        """Close the session with the Logi Circle API"""
-        _LOGGER.debug('Closing session for %s.', self.username)
-        if isinstance(self._session, aiohttp.ClientSession):
-            await self._session.close()
-            self._session = None
-            self.is_connected = False
-        else:
-            raise NoSession()
+    @property
+    async def cameras(self):
+        """Return all cameras."""
+        cameras = []
+        raw_cameras = await self._fetch(ACCESSORIES_ENDPOINT)
 
-    async def _authenticate(self):
-        """Authenticate user with the Logi Circle API."""
-        url = API_URI + AUTH_ENDPOINT
-        login_payload = {'email': self.username, 'password': self.password}
+        for camera in raw_cameras:
+            cameras.append(Camera(self, camera))
 
-        _LOGGER.debug("POSTing login payload to %s", url)
-
-        session = aiohttp.ClientSession()
-        async with session.post(url, json=login_payload, headers=HEADERS) as req:
-            # Handle failed authentication due to incorrect user/pass
-            if req.status == 401:
-                raise BadLogin(
-                    'Username or password provided is incorrect. Could not authenticate.')
-
-            # Throw error if authentication failed for any reason (connection issues, outage, etc)
-            req.raise_for_status()
-
-            self._session = session
-            self.is_connected = True
-            _LOGGER.info("Logged in as %s.", self.username)
-
-            # Cache account and cookie for later use if reuse_session is true
-            if self._reuse_session:
-                try:
-                    cookie = _get_session_cookie(session.cookie_jar)
-                    _LOGGER.debug("Persisting session cookie %s", cookie)
-                    self._cache['account'] = self.username
-                    self._cache['cookie'] = cookie.value
-                    _save_cache(self._cache, self._cache_file)
-                except BadSession:
-                    _LOGGER.error(
-                        "Logi API authenticated successfully, but the session cookie wasn't returned.")
-                    raise
-
-    async def _restore_cached_session(self):
-        """Retrieved cached cookie and validate session."""
-        if _exists_cache(self._cache_file):
-            _LOGGER.debug("Restoring cookie from cache.")
-
-            self._cache = _read_cache(self._cache_file)
-
-            if (self._cache['account'] is None) or (self._cache['cookie'] is None):
-                # Cache is missing one or required values.
-                _LOGGER.debug('Cache appears corrupt. Re-authenticating.')
-                raise BadCache()
-            elif self._cache['account'] != self.username:
-                # Cache does not apply to this user.
-                _LOGGER.debug(
-                    'Cached credentials are for a different user. Re-authenticating.')
-                raise BadCache()
-            else:
-                cookies = {COOKIE_NAME: self._cache['cookie']}
-
-                session = aiohttp.ClientSession(cookies=cookies)
-                async with session.get(API_URI + VALIDATE_ENDPOINT, headers=HEADERS) as req:
-                    if req.status >= 300:
-                        # Cookie has probably expired, reauthenticate.
-                        raise BadCache()
-                    else:
-                        _LOGGER.info(
-                            "Restored cached session for %s.", self.username)
-                        self._session = session
-                        self.is_connected = True
-
-        else:
-            raise BadCache()
+        return cameras
 
     async def _fetch(self,
                      url,
                      method='GET',
                      params=None,
                      request_body=None,
+                     headers=None,
                      relative_to_api_root=True,
                      raw=False,
                      _reattempt=False):
         """Query data from the Logi Circle API."""
+        # pylint: disable=too-many-locals
 
-        if self._session is None:
-            await self.login()
+        if not self.auth_provider.authorized:
+            raise NotAuthorized('No access token available for this client ID')
 
-        resolved_url = (API_URI + url if relative_to_api_root else url)
+        base_headers = {
+            'X-API-Key': self.api_key,
+            'Authorization': 'Bearer %s' % (self.auth_provider.access_token)
+        }
+        request_headers = {**base_headers, **(headers or {})}
+
+        resolved_url = (API_BASE + url if relative_to_api_root else url)
         _LOGGER.debug("Fetching %s (%s)", resolved_url, method)
 
-        req = None
+        resp = None
+        session = await self.auth_provider.get_session()
 
         # Perform request
         if method == 'GET':
-            req = await self._session.get(resolved_url, headers=HEADERS, params=params)
+            resp = await session.get(resolved_url,
+                                     headers=request_headers,
+                                     params=params,
+                                     allow_redirects=False)
         elif method == 'POST':
-            req = await self._session.post(resolved_url, headers=HEADERS, params=params, json=request_body)
+            resp = await session.post(resolved_url,
+                                      headers=request_headers,
+                                      params=params,
+                                      json=request_body,
+                                      allow_redirects=False)
         elif method == 'PUT':
-            req = await self._session.put(resolved_url, headers=HEADERS, params=params, json=request_body)
+            resp = await session.put(resolved_url,
+                                     headers=request_headers,
+                                     params=params,
+                                     json=request_body,
+                                     allow_redirects=False)
+        elif method == 'DELETE':
+            resp = await session.delete(resolved_url,
+                                        headers=request_headers,
+                                        params=params,
+                                        json=request_body,
+                                        allow_redirects=False)
         else:
             raise ValueError('Method %s not supported.' % (method))
 
-        _LOGGER.debug('Request %s (%s) returned %s',
-                      resolved_url, method, req.status)
+        content_type = resp.headers.get('content-type')
 
-        # Handle response
+        _LOGGER.debug('Request %s (%s) returned %s with content type %s',
+                      resolved_url, method, resp.status, content_type)
+
+        if resp.status == 301 or resp.status == 302:
+            # We need to implement our own redirect handling - Logi API
+            # requires auth headers to passed to the redirected resource, but
+            # aiohttp doesn't do this.
+            redirect_uri = resp.headers['location']
+            return await self._fetch(
+                url=redirect_uri,
+                method=method,
+                params=params,
+                request_body=request_body,
+                headers=headers,
+                relative_to_api_root=False,
+                raw=raw
+            )
+
+        if resp.status == 401 and not _reattempt:
+            # Token may have expired. Refresh and try again.
+            await self.auth_provider.refresh()
+            return await self._fetch(
+                url=url,
+                method=method,
+                params=params,
+                request_body=request_body,
+                relative_to_api_root=relative_to_api_root,
+                raw=raw,
+                _reattempt=True
+            )
+        if resp.status == 401 and _reattempt:
+            raise AuthorizationFailed('Could not refresh access token')
+        resp.raise_for_status()
+
+        if raw:
+            # Return unread ClientResponse object to client.
+            return resp
+        if 'json' in content_type:
+            resp_data = await resp.json()
+        else:
+            resp_data = await resp.read()
+
+        resp.close()
+        return resp_data
+
+    @staticmethod
+    def _get_ffmpeg_path(ffmpeg_path=None):
+        """Returns a bool indicating whether ffmpeg is installed."""
+        resolved_ffmpeg_path = ffmpeg_path or DEFAULT_FFMPEG_BIN
         try:
-            return await _handle_response(request=req, raw=raw)
-        except BadSession:
-            if _reattempt:
-                # Welp, session still bad even after reauthenticating.
-                _LOGGER.error(
-                    'Session expired and a new session could not be established.')
-                raise
-            else:
-                # Assume session expiry. Re-authenticate and try again.
-                _LOGGER.debug(
-                    'Session appears to have expired. Re-authenticating.')
-                await self.login()
-                return await self._fetch(url=url,
-                                         method=method,
-                                         params=params,
-                                         request_body=request_body,
-                                         relative_to_api_root=relative_to_api_root,
-                                         raw=raw,
-                                         _reattempt=True)
-
-    @property
-    def cookie(self):
-        """Returns a cookie string that can be used for requests external to this library"""
-        if self._session is None:
-            return False
-        return '%s=%s' % (COOKIE_NAME, _get_session_cookie(self._session.cookie_jar).value)
-
-    @property
-    async def cameras(self):
-        """ Return all cameras. """
-        cameras = []
-        raw_cameras = await self._fetch(CAMERAS_ENDPOINT)
-
-        for camera in raw_cameras:
-            cameras.append(Camera(self, camera))
-
-        return cameras
+            subprocess.check_call([resolved_ffmpeg_path, "-version"],
+                                  stdout=subprocess.DEVNULL)
+            return resolved_ffmpeg_path
+        except OSError:
+            _LOGGER.warning(
+                'ffmpeg is not installed! Not all API methods will function.')
+        return None
