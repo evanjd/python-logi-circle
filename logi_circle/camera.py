@@ -9,7 +9,13 @@ from .const import (ACCESSORIES_ENDPOINT,
                     ACTIVITIES_ENDPOINT,
                     CONFIG_ENDPOINT,
                     PROP_MAP,
-                    ACTIVITY_API_LIMIT)
+                    ACTIVITY_API_LIMIT,
+                    GEN_1_MODEL,
+                    GEN_2_MODEL,
+                    GEN_1_MOUNT,
+                    GEN_2_MOUNT_WIRE,
+                    GEN_2_MOUNT_WIREFREE,
+                    MOUNT_UNKNOWN)
 from .live_stream import LiveStream
 from .activity import Activity
 
@@ -191,6 +197,17 @@ class Camera():
     def model(self):
         """Return model number."""
         return self._attrs.get('model')
+
+    @property
+    def mount(self):
+        """Infer mount type from camera model and battery level"""
+        if self.model == GEN_1_MODEL:
+            return GEN_1_MOUNT
+        if self.model == GEN_2_MODEL:
+            if self.battery_level == -1:
+                return GEN_2_MOUNT_WIRE
+            return GEN_2_MOUNT_WIREFREE
+        return MOUNT_UNKNOWN
 
     @property
     def firmware(self):

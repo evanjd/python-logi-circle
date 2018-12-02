@@ -40,6 +40,12 @@ DEFAULT_IMAGE_REFRESH = False
 DEFAULT_FFMPEG_BIN = "ffmpeg"
 ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%SZ'
 ACTIVITY_API_LIMIT = 100
+GEN_1_MODEL = "A1533"
+GEN_2_MODEL = "V-R0008"
+GEN_1_MOUNT = "Charging Ring"
+GEN_2_MOUNT_WIRE = "Wired"
+GEN_2_MOUNT_WIREFREE = "Wire-free"  # Battery powered
+MOUNT_UNKNOWN = "Unknown"
 
 # Prop to API mapping
 PROP_MAP = {

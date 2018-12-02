@@ -11,7 +11,13 @@ from logi_circle.const import (API_HOST,
                                ACCESSORIES_ENDPOINT,
                                ACTIVITIES_ENDPOINT,
                                ACTIVITY_API_LIMIT,
-                               CONFIG_ENDPOINT)
+                               CONFIG_ENDPOINT,
+                               GEN_1_MODEL,
+                               GEN_2_MODEL,
+                               GEN_1_MOUNT,
+                               GEN_2_MOUNT_WIRE,
+                               GEN_2_MOUNT_WIREFREE,
+                               MOUNT_UNKNOWN)
 
 
 class TestCamera(LogiUnitTestBase):
@@ -43,6 +49,7 @@ class TestCamera(LogiUnitTestBase):
 
         # Optional props
         self.assertEqual(self.test_camera.model, gen1_fixture['modelNumber'])
+        self.assertEqual(self.test_camera.mount, GEN_1_MOUNT)
         self.assertEqual(self.test_camera.is_connected, gen1_fixture['isConnected'])
         self.assertEqual(self.test_camera.streaming_enabled, gen1_fixture['cfg']['streamingEnabled'])
         self.assertEqual(self.test_camera.timezone, gen1_fixture['cfg']['timeZone'])
@@ -107,6 +114,33 @@ class TestCamera(LogiUnitTestBase):
 
         # Timezone should fallback to UTC
         self.assertEqual(camera.timezone, "UTC")
+
+        # Mount should be unknown
+        self.assertEqual(camera.mount, MOUNT_UNKNOWN)
+
+    def test_camera_mount_prop(self):
+        """Test mount property correctly infers type from other props"""
+
+        gen2_wired_fixture = json.loads(self.fixtures['accessories'])[1]
+        gen2_wirefree_fixture = json.loads(self.fixtures['accessories'])[2]
+
+        gen1_camera = Camera(self.logi, self.gen1_fixture)
+        gen2_wired_camera = Camera(self.logi, gen2_wired_fixture)
+        gen2_wirefree_camera = Camera(self.logi, gen2_wirefree_fixture)
+
+        # Test 1st gen
+        self.assertEqual(gen1_camera.mount, GEN_1_MOUNT)
+        self.assertEqual(gen1_camera.model, GEN_1_MODEL)
+
+        # Test 2nd gen wired camera (should have no battery)
+        self.assertEqual(gen2_wired_camera.mount, GEN_2_MOUNT_WIRE)
+        self.assertEqual(gen2_wired_camera.battery_level, -1)
+        self.assertEqual(gen2_wired_camera.model, GEN_2_MODEL)
+
+        # Test 2nd gen wire-free camera (should have battery)
+        self.assertEqual(gen2_wirefree_camera.mount, GEN_2_MOUNT_WIREFREE)
+        self.assertNotEqual(gen2_wirefree_camera.battery_level, -1)
+        self.assertEqual(gen2_wirefree_camera.model, GEN_2_MODEL)
 
     def test_signal_strength_categories(self):
         """Test friendly signal strength categorisation"""
