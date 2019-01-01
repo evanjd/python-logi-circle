@@ -4,10 +4,17 @@
 import logging
 import subprocess
 
-from .const import DEFAULT_SCOPES, DEFAULT_CACHE_FILE, API_BASE, ACCESSORIES_ENDPOINT, DEFAULT_FFMPEG_BIN
+from .const import (DEFAULT_SCOPES,
+                    DEFAULT_CACHE_FILE,
+                    API_BASE,
+                    ACCESSORIES_ENDPOINT,
+                    NOTIFICATIONS_ENDPOINT,
+                    DEFAULT_FFMPEG_BIN)
 from .auth import AuthProvider
 from .camera import Camera
+from .subscription import Subscription
 from .exception import NotAuthorized, AuthorizationFailed
+from .utils import _get_ids_for_cameras
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +40,7 @@ class LogiCircle():
         self.api_key = api_key
         self.ffmpeg_path = self._get_ffmpeg_path(ffmpeg_path)
         self.is_connected = False
+        self._cameras = []
 
     @property
     def authorized(self):
@@ -51,13 +59,42 @@ class LogiCircle():
     @property
     async def cameras(self):
         """Return all cameras."""
+        if self._cameras:
+            # Returned cached list
+            return self._cameras
+
+        # Get cameras from remote API
         cameras = []
         raw_cameras = await self._fetch(ACCESSORIES_ENDPOINT)
 
         for camera in raw_cameras:
             cameras.append(Camera(self, camera))
 
+        self._cameras = cameras
         return cameras
+
+    async def subscribe(self, event_types, cameras=None):
+        """Subscribe camera(s) to one or more event types"""
+
+        if not cameras:
+            # If no cameras specified, subscribe all
+            cameras = await self.cameras
+
+        request = {"accessories": _get_ids_for_cameras(cameras),
+                   "eventTypes": event_types}
+
+        # Request WS URL
+        wss_url_request = await self._fetch(url=NOTIFICATIONS_ENDPOINT,
+                                            headers={"X-Logi-NoRedirect": "true"},
+                                            request_body=request,
+                                            method='POST',
+                                            raw=True)
+
+        # Retrieve WS URL from header and return Subscription object
+        wss_url = wss_url_request.headers['X-Logi-Websocket-Url']
+        wss_url_request.close()
+
+        return Subscription(wss_url=wss_url, cameras=cameras)
 
     async def _fetch(self,
                      url,
@@ -92,24 +129,13 @@ class LogiCircle():
                                      headers=request_headers,
                                      params=params,
                                      allow_redirects=False)
-        elif method == 'POST':
-            resp = await session.post(resolved_url,
-                                      headers=request_headers,
-                                      params=params,
-                                      json=request_body,
-                                      allow_redirects=False)
-        elif method == 'PUT':
-            resp = await session.put(resolved_url,
-                                     headers=request_headers,
-                                     params=params,
-                                     json=request_body,
-                                     allow_redirects=False)
-        elif method == 'DELETE':
-            resp = await session.delete(resolved_url,
-                                        headers=request_headers,
-                                        params=params,
-                                        json=request_body,
-                                        allow_redirects=False)
+        elif method in ['POST', 'PUT', 'DELETE']:
+            func = getattr(session, method.lower())
+            resp = await func(resolved_url,
+                              headers=request_headers,
+                              params=params,
+                              json=request_body,
+                              allow_redirects=False)
         else:
             raise ValueError('Method %s not supported.' % (method))
 
@@ -117,6 +143,9 @@ class LogiCircle():
 
         _LOGGER.debug('Request %s (%s) returned %s with content type %s',
                       resolved_url, method, resp.status, content_type)
+
+        if resp.headers.get('X-Logi-Error'):
+            _LOGGER.debug('Error header included with message: %s', resp.headers['X-Logi-Error'])
 
         if resp.status == 301 or resp.status == 302:
             # We need to implement our own redirect handling - Logi API

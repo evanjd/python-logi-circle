@@ -23,6 +23,7 @@ API_BASE = "https://%s" % (API_HOST)
 ACCESSORIES_ENDPOINT = "/api/accessories"
 ACTIVITIES_ENDPOINT = "/activities"
 CONFIG_ENDPOINT = "/config"
+NOTIFICATIONS_ENDPOINT = "/api/accounts/self/notifications"
 LIVE_IMAGE_ENDPOINT = "/live/image"
 LIVE_RTSP_ENDPOINT = "/live/rtsp"
 ACTIVITY_IMAGE_ENDPOINT = "/image"
@@ -46,6 +47,11 @@ GEN_1_MOUNT = "Charging Ring"
 GEN_2_MOUNT_WIRE = "Wired"
 GEN_2_MOUNT_WIREFREE = "Wire-free"  # Battery powered
 MOUNT_UNKNOWN = "Unknown"
+MOTION_ACTIVITY_EVENTS = ["activity_created",
+                          "activity_updated",
+                          "activity_finished",
+                          "motion_started",
+                          "motion_ended"]
 
 # Prop to API mapping
 PROP_MAP = {

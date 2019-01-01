@@ -30,6 +30,7 @@ class Camera():
         self.logi = logi
         self._attrs = {}
         self._live_stream = None
+        self.events = []
 
         self._set_attributes(camera)
 
@@ -49,6 +50,10 @@ class Camera():
 
         self._local_tz = pytz.timezone(self.timezone)
         self._live_stream = LiveStream(logi=self.logi, camera=self)
+
+    async def subscribe(self, event_types):
+        """Shorthand method for subscribing to a single camera's events"""
+        return self.logi.subscribe(event_types, [self])
 
     async def update(self):
         """Poll API for changes to camera properties"""
