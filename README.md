@@ -55,7 +55,7 @@ if not logi.authorized:
     asyncio.get_event_loop().run_until_complete(authorize())
 ```
 
-#### Grab latest still image
+#### Grab latest still image:
 
 ```python
 async def get_snapshot_images():
@@ -69,7 +69,7 @@ async def get_snapshot_images():
 asyncio.get_event_loop().run_until_complete(get_snapshot_images())
 ```
 
-#### Download 30s of live stream video from 1st camera (requires ffmpeg)
+#### Download 30s of live stream video from 1st camera (requires ffmpeg):
 
 ```python
 async def get_livestream():
@@ -84,7 +84,7 @@ async def get_livestream():
 asyncio.get_event_loop().run_until_complete(get_livestream())
 ```
 
-### Download latest activity for all cameras:
+#### Download latest activity for all cameras:
 
 ```python
 async def get_latest_activity():
@@ -101,7 +101,7 @@ async def get_latest_activity():
 asyncio.get_event_loop().run_until_complete(get_latest_activity())
 ```
 
-### Turn off streaming for all cameras
+#### Turn off streaming for all cameras:
 
 ```python
 async def disable_streaming_all():
@@ -117,7 +117,7 @@ async def disable_streaming_all():
 asyncio.get_event_loop().run_until_complete(disable_streaming_all())
 ```
 
-### Play with props
+#### Play with props:
 
 ```python
 async def play_with_props():
