@@ -22,11 +22,11 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 - Query/filter the activity history by start time and/or activity properties (duration, relevance)
 - Set name, timezone, streaming mode and privacy mode of a given camera
 - On-demand polling from server to update camera properties
+- Subscribe to WebSocket API to handle camera property updates and activities pushed from API
 - Read camera properties (see "play with props" example)
 
 ## Features planned
 
-- Websocket integration to subscribe to camera events (motion, etc)
 - Update Home Assistant integration to support v0.2.x version of this library (dependent on Logitech's public release of their API)
 
 ## Usage example
@@ -115,6 +115,21 @@ async def disable_streaming_all():
     await logi.close()
 
 asyncio.get_event_loop().run_until_complete(disable_streaming_all())
+```
+
+#### Subscribe to camera events with WS API:
+
+```python
+async def subscribe_to_events():
+    subscription = await logi.subscribe(['accessory_settings_changed',
+                                         "activity_created",
+                                         "activity_updated",
+                                         "activity_finished"])
+    while True:
+        await subscription.get_next_event()
+
+# You probably want to execute this in a different event loop or thread! 
+asyncio.get_event_loop().run_until_complete(play_with_props())
 ```
 
 #### Play with props:
