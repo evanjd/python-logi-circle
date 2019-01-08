@@ -14,12 +14,13 @@ _LOGGER = logging.getLogger(__name__)
 class Subscription():
     """Generic implementation for a Logi Circle event subscription."""
 
-    def __init__(self, wss_url, cameras):
+    def __init__(self, wss_url, cameras, raw=False):
         """Initialize Subscription object"""
         self.wss_url = wss_url
         self._cameras = cameras
         self._ws = None
         self._session = None
+        self._raw = raw
 
     async def open(self):
         """Establish a new WebSockets connection"""
@@ -46,6 +47,8 @@ class Subscription():
         _LOGGER.debug("WS: Waiting for next frame")
         msg = await self._ws.receive()
 
+        if self._raw:
+            return msg
         if msg.data:
             self._handle_event(msg.data)
 
