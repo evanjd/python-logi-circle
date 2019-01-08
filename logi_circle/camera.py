@@ -31,7 +31,7 @@ class Camera():
         self.logi = logi
         self._attrs = {}
         self._live_stream = None
-        self.events = []
+        self._current_activity = None
 
         self._set_attributes(camera)
 

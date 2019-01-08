@@ -4,8 +4,9 @@
 import logging
 import json
 import aiohttp
-from .const import MOTION_ACTIVITY_EVENTS
+from .const import ACTIVITY_EVENTS, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT
 from .utils import _get_camera_from_id
+from .activity import Activity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,11 +40,31 @@ class Subscription():
 
     async def get_next_event(self):
         """Wait for next WS frame"""
+        if self._session is None:
+            await self.open()
+
         _LOGGER.debug("WS: Waiting for next frame")
         msg = await self._ws.receive()
 
         if msg.data:
             self._handle_event(msg.data)
+
+        return msg
+
+    @staticmethod
+    def _handle_activity(event_type, event, camera):
+        """Controls the camera's current_activity prop based on incoming activity events."""
+
+        if event_type in ['activity_created', 'activity_updated']:
+            # Set camera's current activity prop to this activity
+            camera._current_activity = Activity(activity=event,
+                                                url='%s/%s%s' % (ACCESSORIES_ENDPOINT, camera.id, ACTIVITIES_ENDPOINT),
+                                                local_tz=camera._local_tz,
+                                                logi=camera.logi)
+
+        if event_type == 'activity_finished':
+            # Clear current activity prop
+            camera._current_activity = None
 
     def _handle_event(self, data):
         """Perform action with event"""
@@ -56,8 +77,8 @@ class Subscription():
         if event_type == "accessory_settings_changed":
             # Update camera props with changes
             camera._set_attributes(event['eventData'])
-        elif event_type in MOTION_ACTIVITY_EVENTS:
+        elif event_type in ACTIVITY_EVENTS:
             # Append event to camera's events list
-            camera.events.append(event['eventData'])
+            Subscription._handle_activity(event_type, event['eventData'], camera)
         else:
             _LOGGER.warning('WS: Event type %s was unhandled', event_type)

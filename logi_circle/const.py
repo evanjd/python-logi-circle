@@ -47,11 +47,9 @@ GEN_1_MOUNT = "Charging Ring"
 GEN_2_MOUNT_WIRE = "Wired"
 GEN_2_MOUNT_WIREFREE = "Wire-free"  # Battery powered
 MOUNT_UNKNOWN = "Unknown"
-MOTION_ACTIVITY_EVENTS = ["activity_created",
-                          "activity_updated",
-                          "activity_finished",
-                          "motion_started",
-                          "motion_ended"]
+ACTIVITY_EVENTS = ["activity_created",
+                   "activity_updated",
+                   "activity_finished"]
 
 # Prop to API mapping
 PROP_MAP = {
