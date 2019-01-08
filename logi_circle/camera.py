@@ -9,6 +9,7 @@ from .const import (ACCESSORIES_ENDPOINT,
                     ACTIVITIES_ENDPOINT,
                     CONFIG_ENDPOINT,
                     PROP_MAP,
+                    FEATURES_MAP,
                     ACTIVITY_API_LIMIT,
                     GEN_1_MODEL,
                     GEN_2_MODEL,
@@ -140,6 +141,15 @@ class Camera():
             activities.append(activity)
 
         return activities
+
+    @property
+    def supported_features(self):
+        """Returns an array of supported sensors for this camera."""
+        return FEATURES_MAP[self.mount]
+
+    def supports_feature(self, feature):
+        """Returns a bool indicating whether a given sensor is implemented for this camera."""
+        return feature in self.supported_features
 
     @property
     async def last_activity(self):

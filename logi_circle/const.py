@@ -74,3 +74,30 @@ PROP_MAP = {
     "led_on": {"key":  "ledEnabled", "config": True, "default_value": False},
     "privacy_mode": {"key":  "privacyMode", "config": True, "default_value": False, "settable": True}
 }
+
+# Feature mapping
+FEATURES_MAP = {
+    GEN_1_MOUNT: ["is_charging",
+                  "battery_level",
+                  "last_activity_time",
+                  "privacy_mode",
+                  "signal_strength_percentage",
+                  "signal_strength_category",
+                  "speaker_volume",
+                  "streaming_enabled"],
+    GEN_2_MOUNT_WIRE: ["last_activity_time",
+                       "privacy_mode",
+                       "signal_strength_percentage",
+                       "signal_strength_category",
+                       "speaker_volume",
+                       "streaming_enabled"],
+    GEN_2_MOUNT_WIREFREE: ["is_charging",
+                           "battery_level",
+                           "last_activity_time",
+                           "privacy_mode",
+                           "signal_strength_percentage",
+                           "signal_strength_category",
+                           "speaker_volume",
+                           "streaming_enabled"],
+    MOUNT_UNKNOWN: ["last_activity_time"]
+}
