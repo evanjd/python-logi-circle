@@ -302,3 +302,25 @@ class TestCamera(LogiUnitTestBase):
                 await self.test_camera.query_activity_history(date_filter='2018-01-01')
 
         self.loop.run_until_complete(run_test())
+
+    def test_slugify_safe_name(self):
+        """Returns camera ID if camera name string empty after slugification."""
+
+        valid_name = 'My camera'
+        invalid_name = '!@#$%^&*()'
+
+        # Test valid name
+        self.test_camera._attrs['name'] = valid_name
+        self.assertEqual(self.test_camera.slugify_safe_name, valid_name)
+
+        # Test invalid name
+        self.test_camera._attrs['name'] = invalid_name
+        self.assertEqual(self.test_camera.slugify_safe_name, self.test_camera.id)
+
+        # Test whitespace
+        self.test_camera._attrs['name'] = ' '
+        self.assertEqual(self.test_camera.slugify_safe_name, self.test_camera.id)
+
+        # Test empty name
+        self.test_camera._attrs['name'] = ''
+        self.assertEqual(self.test_camera.slugify_safe_name, self.test_camera.id)

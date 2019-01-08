@@ -2,6 +2,7 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
+import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,3 +34,8 @@ def _get_camera_from_id(camera_id, cameras):
     if camera:
         return camera[0]
     raise ValueError("No camera found with ID %s" % (camera_id))
+
+
+def _slugify_string(text):
+    """Slugify a given text."""
+    return slugify.slugify(text, separator='_')

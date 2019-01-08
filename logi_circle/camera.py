@@ -2,7 +2,7 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from aiohttp.client_exceptions import ClientResponseError
 from .const import (ACCESSORIES_ENDPOINT,
@@ -19,6 +19,7 @@ from .const import (ACCESSORIES_ENDPOINT,
                     MOUNT_UNKNOWN)
 from .live_stream import LiveStream
 from .activity import Activity
+from .utils import _slugify_string
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,6 +153,16 @@ class Camera():
         return feature in self.supported_features
 
     @property
+    def current_activity(self):
+        """Returns the current open activity - only available when subscribed to activity events."""
+
+        if (self._current_activity and
+                self._current_activity.start_time_utc >= (datetime.utcnow() - timedelta(minutes=3))):
+            # Only return activities that began in the last 3 minutes, as this is the maximum length of an activity
+            return self._current_activity
+        return None
+
+    @property
     async def last_activity(self):
         """Returns the most recent activity as an Activity object."""
         activity = await self.query_activity_history(limit=1)
@@ -176,6 +187,16 @@ class Camera():
     def name(self):
         """Return device name."""
         return self._attrs.get('name')
+
+    @property
+    def slugify_safe_name(self):
+        """Returns device name (falling back to device ID if name cannot be slugified)"""
+        raw_name = self.name
+        if _slugify_string(raw_name):
+            # Return name if has > 0 chars after being slugified
+            return raw_name
+        # Fallback to camera ID
+        return self.id
 
     @property
     def timezone(self):
