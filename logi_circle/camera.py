@@ -53,11 +53,11 @@ class Camera():
         self._live_stream = LiveStream(logi=self.logi, camera=self)
 
     async def subscribe(self, event_types):
-        """Shorthand method for subscribing to a single camera's events"""
+        """Shorthand method for subscribing to a single camera's events."""
         return self.logi.subscribe(event_types, [self])
 
     async def update(self):
-        """Poll API for changes to camera properties"""
+        """Poll API for changes to camera properties."""
         _LOGGER.debug('Updating properties for camera %s', self.name)
 
         url = "%s/%s" % (ACCESSORIES_ENDPOINT, self.id)
@@ -164,7 +164,7 @@ class Camera():
 
     @property
     def live_stream(self):
-        """Return LiveStream class for this camera"""
+        """Return LiveStream class for this camera."""
         return self._live_stream
 
     @property
@@ -205,7 +205,7 @@ class Camera():
 
     @property
     def is_charging(self):
-        """Return bool indicating whether the device is currently connected to power."""
+        """Return bool indicating whether the device is currently charging."""
         return self._attrs.get('is_charging')
 
     @property
@@ -215,7 +215,7 @@ class Camera():
 
     @property
     def mount(self):
-        """Infer mount type from camera model and battery level"""
+        """Infer mount type from camera model and battery level."""
         if self.model == GEN_1_MODEL:
             return GEN_1_MOUNT
         if self.model == GEN_2_MODEL:
