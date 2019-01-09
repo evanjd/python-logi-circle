@@ -136,3 +136,8 @@ class Activity():
     def duration(self):
         """Return activity duration as a timedelta object."""
         return self._attrs['duration']
+
+    @property
+    def relevance_level(self):
+        """Return relevance level."""
+        return self._attrs['relevance_level']
