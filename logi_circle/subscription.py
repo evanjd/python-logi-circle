@@ -57,7 +57,7 @@ class Subscription():
     @property
     def is_open(self):
         """Returns a bool indicating whether the subscription is active."""
-        return True if self._ws else False
+        return bool(self._ws)
 
     @staticmethod
     def _handle_activity(event_type, event, camera):

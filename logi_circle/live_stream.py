@@ -57,10 +57,11 @@ class LiveStream():
 
     async def download_rtsp(self,
                             duration,  # in seconds
-                            filename):
+                            filename,
+                            ffmpeg_bin=None):
         """Downloads the live stream into a specific file for a specific duration"""
 
-        ffmpeg_bin = self.logi.ffmpeg_path
+        ffmpeg_bin = ffmpeg_bin or self.logi.ffmpeg_path
 
         # Bail now if ffmpeg is missing
         if ffmpeg_bin is None:
