@@ -244,7 +244,7 @@ class TestCamera(LogiUnitTestBase):
                                               text=self.fixtures['activities'],
                                               headers={'content-type': 'application/json'}))
                 # Props should match fixture
-                self.assertIsInstance(await self.test_camera.last_activity, Activity)
+                self.assertIsInstance(await self.test_camera.get_last_activity(), Activity)
 
         self.loop.run_until_complete(run_test())
 
@@ -259,7 +259,7 @@ class TestCamera(LogiUnitTestBase):
                                               text='{ "activities" : [] }',
                                               headers={'content-type': 'application/json'}))
                 # Props should match fixture
-                self.assertIsNone(await self.test_camera.last_activity)
+                self.assertIsNone(await self.test_camera.get_last_activity())
 
         self.loop.run_until_complete(run_test())
 

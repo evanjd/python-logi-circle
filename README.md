@@ -137,7 +137,7 @@ asyncio.get_event_loop().run_until_complete(play_with_props())
 ```python
 async def play_with_props():
     for camera in await logi.cameras:
-        last_activity = await camera.last_activity
+        last_activity = await camera.get_last_activity()
         print('%s: %s' % (camera.name,
                           ('is charging' if camera.is_charging else 'is not charging')))
         if camera.battery_level >= 0:

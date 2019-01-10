@@ -21,9 +21,12 @@ class Subscription():
         self._ws = None
         self._session = None
         self._raw = raw
+        self._closed = False
 
     async def open(self):
         """Establish a new WebSockets connection"""
+        if self._closed:
+            return RuntimeError('This subscription has been closed')
         self._session = aiohttp.ClientSession()
         self._ws = await self._session.ws_connect(
             self.wss_url)
@@ -31,6 +34,7 @@ class Subscription():
 
     async def close(self):
         """Close WebSockets connection"""
+        self._closed = True
         if isinstance(self._ws, aiohttp.ClientWebSocketResponse):
             await self._ws.close()
             self._ws = None
@@ -69,9 +73,9 @@ class Subscription():
                                                 url='%s/%s%s' % (ACCESSORIES_ENDPOINT, camera.id, ACTIVITIES_ENDPOINT),
                                                 local_tz=camera._local_tz,
                                                 logi=camera.logi)
+            camera._last_activity = camera._current_activity
 
-        if event_type == 'activity_finished':
-            # Clear current activity prop
+        if event_type == 'activity_finished' and camera._current_activity:
             camera._current_activity = None
 
     def _handle_event(self, data):
@@ -86,7 +90,7 @@ class Subscription():
             # Update camera props with changes
             camera._set_attributes(event['eventData'])
         elif event_type in ACTIVITY_EVENTS:
-            # Append event to camera's events list
+            # Set/unset camera's current activity
             Subscription._handle_activity(event_type, event['eventData'], camera)
         else:
             _LOGGER.warning('WS: Event type %s was unhandled', event_type)

@@ -33,6 +33,7 @@ class Camera():
         self._attrs = {}
         self._live_stream = None
         self._current_activity = None
+        self._last_activity = None
 
         self._set_attributes(camera)
 
@@ -162,13 +163,19 @@ class Camera():
             return self._current_activity
         return None
 
-    @property
-    async def last_activity(self):
+    async def get_last_activity(self, force_refresh=False):
         """Returns the most recent activity as an Activity object."""
+        if self._last_activity is None or force_refresh:
+            return await self._pull_last_activity()
+        return self._last_activity
+
+    async def _pull_last_activity(self):
+        """Queries API for latest activity"""
         activity = await self.query_activity_history(limit=1)
 
         try:
-            return activity[0]
+            self._last_activity = activity[0]
+            return self._last_activity
         except IndexError:
             # If there's no activity history for this camera at all.
             return None
