@@ -89,8 +89,8 @@ class AuthProvider():
     async def close(self):
         """Closes the aiohttp session."""
         for subscription in self.logi.subscriptions:
-            # Close WS connections
-            await subscription.close()
+            if subscription.is_open:
+                _LOGGER.warning('One or more WS connections have not been closed.')
 
         if isinstance(self.session, aiohttp.ClientSession):
             await self.session.close()
