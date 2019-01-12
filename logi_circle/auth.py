@@ -66,6 +66,13 @@ class AuthProvider():
 
         await self._authenticate(authorize_payload)
 
+    async def clear_authorization(self):
+        """Logs out and clears all persisted tokens for this client ID."""
+        await self.close()
+
+        self.tokens[self.client_id] = {}
+        self._save_token()
+
     async def refresh(self):
         """Use the persisted refresh token to request a new access token."""
         if not self.authorized:
@@ -81,6 +88,10 @@ class AuthProvider():
 
     async def close(self):
         """Closes the aiohttp session."""
+        for subscription in self.logi.subscriptions:
+            # Close WS connections
+            await subscription.close()
+
         if isinstance(self.session, aiohttp.ClientSession):
             await self.session.close()
             self.session = None
