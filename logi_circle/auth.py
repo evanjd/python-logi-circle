@@ -90,6 +90,8 @@ class AuthProvider():
         """Closes the aiohttp session."""
         for subscription in self.logi.subscriptions:
             if subscription.is_open:
+                # Signal subscription to close itself when the next frame is processed.
+                subscription.invalidate()
                 _LOGGER.warning('One or more WS connections have not been closed.')
 
         if isinstance(self.session, aiohttp.ClientSession):

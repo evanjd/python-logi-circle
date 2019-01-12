@@ -22,6 +22,7 @@ class Subscription():
         self._session = None
         self._raw = raw
         self._closed = False
+        self._invalidated = False
 
     async def open(self):
         """Establish a new WebSockets connection"""
@@ -50,6 +51,10 @@ class Subscription():
         """Wait for next WS frame"""
         if self._session is None:
             await self.open()
+        if self._invalidated:
+            _LOGGER.debug("WS: Invalidating subscription")
+            await self.close()
+            return {}
 
         _LOGGER.debug("WS: Waiting for next frame")
         msg = await self._ws.receive()
@@ -60,6 +65,10 @@ class Subscription():
             self._handle_event(msg.data)
 
         return msg
+
+    def invalidate(self):
+        """Signal event broker(s) to close subscription on next WS frame."""
+        self._invalidated = True
 
     @property
     def is_open(self):
