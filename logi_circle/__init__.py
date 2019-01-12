@@ -7,6 +7,7 @@ import subprocess
 from .const import (DEFAULT_SCOPES,
                     DEFAULT_CACHE_FILE,
                     API_BASE,
+                    ACCOUNT_ENDPOINT,
                     ACCESSORIES_ENDPOINT,
                     NOTIFICATIONS_ENDPOINT,
                     DEFAULT_FFMPEG_BIN)
@@ -56,6 +57,11 @@ class LogiCircle():
     async def close(self):
         """Closes the aiohttp session"""
         await self.auth_provider.close()
+
+    @property
+    async def account(self):
+        """Get account data from accounts endpoint."""
+        return await self._fetch(ACCOUNT_ENDPOINT)
 
     @property
     async def cameras(self):

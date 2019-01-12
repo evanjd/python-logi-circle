@@ -20,12 +20,16 @@ DEFAULT_SCOPES = ("circle:activities_basic circle:activities circle:accessories 
 # API endpoints
 API_HOST = "api.circle.logi.com"
 API_BASE = "https://%s" % (API_HOST)
+# Relative to API root
+NOTIFICATIONS_ENDPOINT = "/api/accounts/self/notifications"
+ACCOUNT_ENDPOINT = "/api/accounts/self"
 ACCESSORIES_ENDPOINT = "/api/accessories"
 ACTIVITIES_ENDPOINT = "/activities"
+# Relative to camera root
 CONFIG_ENDPOINT = "/config"
-NOTIFICATIONS_ENDPOINT = "/api/accounts/self/notifications"
 LIVE_IMAGE_ENDPOINT = "/live/image"
 LIVE_RTSP_ENDPOINT = "/live/rtsp"
+# Relative to activity root
 ACTIVITY_IMAGE_ENDPOINT = "/image"
 ACTIVITY_MP4_ENDPOINT = "/mp4"
 ACTIVITY_DASH_ENDPOINT = "/mpd"
