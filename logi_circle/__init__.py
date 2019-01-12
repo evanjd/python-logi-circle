@@ -40,6 +40,7 @@ class LogiCircle():
         self.api_key = api_key
         self.ffmpeg_path = self._get_ffmpeg_path(ffmpeg_path)
         self.is_connected = False
+        self._subscriptions = []
         self._cameras = []
 
     @property
@@ -94,7 +95,14 @@ class LogiCircle():
         wss_url = wss_url_request.headers['X-Logi-Websocket-Url']
         wss_url_request.close()
 
-        return Subscription(wss_url=wss_url, cameras=cameras)
+        subscription = Subscription(wss_url=wss_url, cameras=cameras)
+        self._subscriptions.append(subscription)
+        return subscription
+
+    @property
+    def subscriptions(self):
+        """Returns all WS subscriptions."""
+        return self._subscriptions
 
     async def _fetch(self,
                      url,
