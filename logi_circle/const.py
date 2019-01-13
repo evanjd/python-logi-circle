@@ -71,6 +71,7 @@ PROP_MAP = {
     "firmware": {"key": "firmwareVersion", "config": True},
     "microphone_on": {"key": "microphoneOn", "config": True, "default_value": False},
     "microphone_gain": {"key": "microphoneGain", "config": True},
+    "pir_wake_up": {"key": "pirWakeUp", "config": True, "default_value": False},
     "speaker_on": {"key": "speakerOn", "config": True, "default_value": False},
     "speaker_volume": {"key": "speakerVolume", "config": True},
     "led_on": {"key":  "ledEnabled", "config": True, "default_value": False},

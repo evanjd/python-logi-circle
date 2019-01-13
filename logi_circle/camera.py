@@ -294,6 +294,12 @@ class Camera():
         return self._attrs.get('microphone_gain')
 
     @property
+    def pir_wake_up(self):
+        """Returns bool indicating whether camera can operate in low power PIR
+           wake up mode."""
+        return self._attrs.get('pir_wake_up')
+
+    @property
     def speaker_on(self):
         """Return bool indicating whether speaker is currently enabled."""
         return self._attrs.get('speaker_on')
