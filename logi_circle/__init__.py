@@ -30,7 +30,8 @@ class LogiCircle():
                  api_key,
                  scopes=DEFAULT_SCOPES,
                  ffmpeg_path=None,
-                 cache_file=DEFAULT_CACHE_FILE):
+                 cache_file=DEFAULT_CACHE_FILE,
+                 update_throttle=30):
         self.auth_provider = AuthProvider(client_id=client_id,
                                           client_secret=client_secret,
                                           redirect_uri=redirect_uri,
@@ -41,6 +42,7 @@ class LogiCircle():
         self.api_key = api_key
         self.ffmpeg_path = self._get_ffmpeg_path(ffmpeg_path)
         self.is_connected = False
+        self.update_throttle = update_throttle
         self._subscriptions = []
         self._cameras = []
 

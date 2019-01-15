@@ -34,6 +34,7 @@ class Camera():
         self._live_stream = None
         self._current_activity = None
         self._last_activity = None
+        self._next_update_time = datetime.utcnow()
 
         self._set_attributes(camera)
 
@@ -58,13 +59,21 @@ class Camera():
         """Shorthand method for subscribing to a single camera's events."""
         return self.logi.subscribe(event_types, [self])
 
-    async def update(self):
+    async def update(self, force=False):
         """Poll API for changes to camera properties."""
         _LOGGER.debug('Updating properties for camera %s', self.name)
 
-        url = "%s/%s" % (ACCESSORIES_ENDPOINT, self.id)
-        camera = await self.logi._fetch(url=url)
-        self._set_attributes(camera)
+        update_throttle = self.logi.update_throttle
+
+        if force is True or datetime.utcnow() >= self._next_update_time:
+            url = "%s/%s" % (ACCESSORIES_ENDPOINT, self.id)
+            camera = await self.logi._fetch(url=url)
+            self._set_attributes(camera)
+            self._next_update_time = datetime.utcnow(
+            ) + timedelta(seconds=update_throttle)
+        else:
+            _LOGGER.debug('Request to update ignored, next update is permitted at %s.',
+                          self._next_update_time)
 
     async def set_config(self, prop, value):
         """Internal method for updating the camera's configuration."""
