@@ -26,7 +26,7 @@ class Subscription():
 
     async def open(self):
         """Establish a new WebSockets connection"""
-        if not self.is_open:
+        if not self.opened:
             return RuntimeError('This subscription has been closed')
         self._session = aiohttp.ClientSession()
         self._ws = await self._session.ws_connect(
@@ -35,7 +35,7 @@ class Subscription():
 
     async def close(self):
         """Close WebSockets connection"""
-        if not self.is_open:
+        if not self.opened:
             return
 
         self._closed = True
@@ -71,9 +71,14 @@ class Subscription():
         self._invalidated = True
 
     @property
-    def is_open(self):
+    def opened(self):
         """Returns a bool indicating whether the subscription is active."""
         return not self._closed
+
+    @property
+    def invalidated(self):
+        """Returns a bool indicating whether the subscription has been invalidated."""
+        return self._invalidated
 
     @staticmethod
     def _handle_activity(event_type, event, camera):
