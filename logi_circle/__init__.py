@@ -65,6 +65,14 @@ class LogiCircle():
         """Get account data from accounts endpoint."""
         return await self._fetch(ACCOUNT_ENDPOINT)
 
+    def flush_cameras(self):
+        """Destroys cached camera list."""
+        self._cameras = None
+
+    async def synchronize_cameras(self):
+        """Caches camera list."""
+        await self.cameras
+
     @property
     async def cameras(self):
         """Return all cameras."""
