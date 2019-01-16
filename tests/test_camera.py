@@ -50,20 +50,20 @@ class TestCamera(LogiUnitTestBase):
         # Optional props
         self.assertEqual(self.test_camera.model, gen1_fixture['modelNumber'])
         self.assertEqual(self.test_camera.mount, GEN_1_MOUNT)
-        self.assertEqual(self.test_camera.is_connected, gen1_fixture['isConnected'])
-        self.assertEqual(self.test_camera.streaming_enabled, gen1_fixture['cfg']['streamingEnabled'])
+        self.assertEqual(self.test_camera.connected, gen1_fixture['isConnected'])
+        self.assertEqual(self.test_camera.streaming, gen1_fixture['cfg']['streamingEnabled'])
         self.assertEqual(self.test_camera.timezone, gen1_fixture['cfg']['timeZone'])
         self.assertEqual(self.test_camera.battery_level, gen1_fixture['cfg']['batteryLevel'])
-        self.assertEqual(self.test_camera.is_charging, gen1_fixture['cfg']['batteryCharging'])
+        self.assertEqual(self.test_camera.charging, gen1_fixture['cfg']['batteryCharging'])
         self.assertEqual(self.test_camera.battery_saving, gen1_fixture['cfg']['saveBattery'])
         self.assertEqual(self.test_camera.signal_strength_percentage, gen1_fixture['cfg']['wifiSignalStrength'])
         self.assertEqual(self.test_camera.firmware, gen1_fixture['cfg']['firmwareVersion'])
-        self.assertEqual(self.test_camera.microphone_on, gen1_fixture['cfg']['microphoneOn'])
+        self.assertEqual(self.test_camera.microphone, gen1_fixture['cfg']['microphoneOn'])
         self.assertEqual(self.test_camera.microphone_gain, gen1_fixture['cfg']['microphoneGain'])
-        self.assertEqual(self.test_camera.speaker_on, gen1_fixture['cfg']['speakerOn'])
+        self.assertEqual(self.test_camera.speaker, gen1_fixture['cfg']['speakerOn'])
         self.assertEqual(self.test_camera.speaker_volume, gen1_fixture['cfg']['speakerVolume'])
-        self.assertEqual(self.test_camera.led_on, gen1_fixture['cfg']['ledEnabled'])
-        self.assertEqual(self.test_camera.recording_enabled, not gen1_fixture['cfg']['privacyMode'])
+        self.assertEqual(self.test_camera.led, gen1_fixture['cfg']['ledEnabled'])
+        self.assertEqual(self.test_camera.recording, not gen1_fixture['cfg']['privacyMode'])
 
     def test_missing_mandatory_props(self):
         """Camera should raise if mandatory props missing"""
@@ -97,7 +97,7 @@ class TestCamera(LogiUnitTestBase):
         self.assertEqual(camera.mac_address, "ABC")
 
         # Optional int/string props not passed to Camera should be None
-        self.assertIsNone(camera.is_charging)
+        self.assertIsNone(camera.charging)
         self.assertIsNone(camera.battery_saving)
         self.assertIsNone(camera.signal_strength_percentage)
         self.assertIsNone(camera.signal_strength_category)
@@ -106,11 +106,11 @@ class TestCamera(LogiUnitTestBase):
         self.assertIsNone(camera.speaker_volume)
 
         # Optional bools should be neutral
-        self.assertFalse(camera.streaming_enabled)
-        self.assertFalse(camera.microphone_on)
-        self.assertFalse(camera.speaker_on)
-        self.assertFalse(camera.led_on)
-        self.assertTrue(camera.recording_enabled)
+        self.assertFalse(camera.streaming)
+        self.assertFalse(camera.microphone)
+        self.assertFalse(camera.speaker)
+        self.assertFalse(camera.led)
+        self.assertTrue(camera.recording)
 
         # Timezone should fallback to UTC
         self.assertEqual(camera.timezone, "UTC")
@@ -198,24 +198,24 @@ class TestCamera(LogiUnitTestBase):
                           aresponses.Response(status=200))
 
                 # Set streaming enabled property
-                self.assertEqual(self.test_camera.streaming_enabled, True)
+                self.assertEqual(self.test_camera.streaming, True)
 
                 # Prop should change when config successfully updated
-                await self.test_camera.set_config('streaming_enabled', False)
-                self.assertEqual(self.test_camera.streaming_enabled, False)
+                await self.test_camera.set_config('streaming', False)
+                self.assertEqual(self.test_camera.streaming, False)
 
                 # Disable recording
-                self.assertEqual(self.test_camera.recording_enabled, True)
+                self.assertEqual(self.test_camera.recording, True)
 
                 # Prop should change when config successfully updated
                 await self.test_camera.set_config('recording_disabled', True)
-                self.assertEqual(self.test_camera.recording_enabled, False)
+                self.assertEqual(self.test_camera.recording, False)
 
                 # Enable recording
 
                 # Prop should change when config successfully updated
                 await self.test_camera.set_config('recording_disabled', False)
-                self.assertEqual(self.test_camera.recording_enabled, True)
+                self.assertEqual(self.test_camera.recording, True)
 
         self.loop.run_until_complete(run_test())
 
@@ -228,12 +228,12 @@ class TestCamera(LogiUnitTestBase):
                 arsps.add(API_HOST, endpoint, 'put',
                           aresponses.Response(status=500))
 
-                self.assertEqual(self.test_camera.streaming_enabled, True)
+                self.assertEqual(self.test_camera.streaming, True)
 
                 # Prop should not update if PUT request fails
                 with self.assertRaises(ClientResponseError):
-                    await self.test_camera.set_config('streaming_enabled', False)
-                self.assertEqual(self.test_camera.streaming_enabled, True)
+                    await self.test_camera.set_config('streaming', False)
+                self.assertEqual(self.test_camera.streaming, True)
 
         self.loop.run_until_complete(run_test())
 

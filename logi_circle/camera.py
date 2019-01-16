@@ -220,14 +220,14 @@ class Camera():
         return self._attrs.get('timezone')
 
     @property
-    def is_connected(self):
+    def connected(self):
         """Return bool indicating whether device is online and can accept commands (hard "on")."""
-        return self._attrs.get('is_connected')
+        return self._attrs.get('connected')
 
     @property
-    def streaming_enabled(self):
+    def streaming(self):
         """Return streaming mode for camera (soft "on")."""
-        return self._attrs.get('streaming_enabled')
+        return self._attrs.get('streaming')
 
     @property
     def battery_level(self):
@@ -241,9 +241,9 @@ class Camera():
         return self._attrs.get('battery_saving')
 
     @property
-    def is_charging(self):
+    def charging(self):
         """Return bool indicating whether the device is currently charging."""
-        return self._attrs.get('is_charging')
+        return self._attrs.get('charging')
 
     @property
     def model(self):
@@ -293,9 +293,9 @@ class Camera():
         return self._attrs.get('mac_address')
 
     @property
-    def microphone_on(self):
+    def microphone(self):
         """Return bool indicating whether microphone is enabled."""
-        return self._attrs.get('microphone_on')
+        return self._attrs.get('microphone')
 
     @property
     def microphone_gain(self):
@@ -309,9 +309,9 @@ class Camera():
         return self._attrs.get('pir_wake_up')
 
     @property
-    def speaker_on(self):
+    def speaker(self):
         """Return bool indicating whether speaker is currently enabled."""
-        return self._attrs.get('speaker_on')
+        return self._attrs.get('speaker')
 
     @property
     def speaker_volume(self):
@@ -319,11 +319,11 @@ class Camera():
         return self._attrs.get('speaker_volume')
 
     @property
-    def led_on(self):
+    def led(self):
         """Return bool indicating whether LED is enabled."""
-        return self._attrs.get('led_on')
+        return self._attrs.get('led')
 
     @property
-    def recording_enabled(self):
+    def recording(self):
         """Return bool indicating whether recording mode is enabled."""
         return not self._attrs.get('recording_disabled')
