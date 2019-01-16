@@ -324,6 +324,6 @@ class Camera():
         return self._attrs.get('led_on')
 
     @property
-    def privacy_mode(self):
-        """Return bool indicating whether privacy mode is enabled (ie. no activities recorded)."""
-        return self._attrs.get('privacy_mode')
+    def recording_enabled(self):
+        """Return bool indicating whether recording mode is enabled."""
+        return not self._attrs.get('recording_disabled')
