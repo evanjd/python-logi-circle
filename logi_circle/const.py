@@ -80,7 +80,8 @@ PROP_MAP = {
 
 # Feature mapping
 FEATURES_MAP = {
-    GEN_1_MOUNT: ["charging",
+    GEN_1_MOUNT: ["activity",
+                  "charging",
                   "battery_level",
                   "last_activity_time",
                   "recording",
@@ -88,13 +89,15 @@ FEATURES_MAP = {
                   "signal_strength_category",
                   "speaker_volume",
                   "streaming"],
-    GEN_2_MOUNT_WIRE: ["last_activity_time",
+    GEN_2_MOUNT_WIRE: ["activity",
+                       "last_activity_time",
                        "recording",
                        "signal_strength_percentage",
                        "signal_strength_category",
                        "speaker_volume",
                        "streaming"],
-    GEN_2_MOUNT_WIREFREE: ["charging",
+    GEN_2_MOUNT_WIREFREE: ["activity",
+                           "charging",
                            "battery_level",
                            "last_activity_time",
                            "recording",
