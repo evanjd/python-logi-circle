@@ -7,6 +7,7 @@ import aiohttp
 from .const import ACTIVITY_EVENTS, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT
 from .utils import _get_camera_from_id
 from .activity import Activity
+from .exception import SubscriptionClosed
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,12 +56,17 @@ class Subscription():
             _LOGGER.debug("WS: Invalidating subscription")
             await self.close()
             return {}
+        if not self.opened:
+            raise SubscriptionClosed("Subscription is closed")
 
         _LOGGER.debug("WS: Waiting for next frame")
         msg = await self._ws.receive()
 
         if self._raw:
             return msg
+        if self._ws.closed:
+            await self.close()
+            return {}
         if msg.data:
             self._handle_event(msg.data)
 
