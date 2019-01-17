@@ -60,7 +60,7 @@ if not logi.authorized:
 ```python
 async def get_snapshot_images():
     for camera in await logi.cameras:
-        if camera.streaming_enabled:
+        if camera.streaming:
             await camera.live_stream.download_jpeg(filename='%s.jpg' % (camera.name),
                                                    quality=75,  # JPEG compression %
                                                    refresh=False)  # Don't force cameras to wake
@@ -106,8 +106,8 @@ asyncio.get_event_loop().run_until_complete(get_latest_activity())
 ```python
 async def disable_streaming_all():
     for camera in await logi.cameras:
-        if camera.streaming_enabled:
-            await camera.set_config(prop='streaming_enabled',
+        if camera.streaming:
+            await camera.set_config(prop='streaming',
                                     value=False)
             print('%s is now off.' % (camera.name))
         else:
@@ -128,8 +128,7 @@ async def subscribe_to_events():
     while True:
         await subscription.get_next_event()
 
-# You probably want to execute this in a different event loop or thread! 
-asyncio.get_event_loop().run_until_complete(play_with_props())
+asyncio.get_event_loop().run_until_complete(subscribe_to_events())
 ```
 
 #### Play with props:
@@ -139,7 +138,7 @@ async def play_with_props():
     for camera in await logi.cameras:
         last_activity = await camera.get_last_activity()
         print('%s: %s' % (camera.name,
-                          ('is charging' if camera.is_charging else 'is not charging')))
+                          ('is charging' if camera.charging else 'is not charging')))
         if camera.battery_level >= 0:
             print('%s: %s%% battery remaining' %
                   (camera.name, camera.battery_level))
@@ -155,13 +154,13 @@ async def play_with_props():
         print('%s: Firmware version %s' % (camera.name, camera.firmware))
         print('%s: MAC address is %s' % (camera.name, camera.mac_address))
         print('%s: Microphone is %s and gain is set to %s (out of 100)' % (
-            camera.name, 'on' if camera.microphone_on else 'off', camera.microphone_gain))
+            camera.name, 'on' if camera.microphone else 'off', camera.microphone_gain))
         print('%s: Speaker is %s and volume is set to %s (out of 100)' % (
-            camera.name, 'on' if camera.speaker_on else 'off', camera.speaker_volume))
+            camera.name, 'on' if camera.speaker else 'off', camera.speaker_volume))
         print('%s: LED is %s' % (
-            camera.name, 'on' if camera.led_on else 'off'))
-        print('%s: Privacy mode is %s' % (
-            camera.name, 'on' if camera.privacy_mode else 'off'))
+            camera.name, 'on' if camera.led else 'off'))
+        print('%s: Recording mode is %s' % (
+            camera.name, 'on' if camera.recording else 'off'))
     await logi.close()
 
 asyncio.get_event_loop().run_until_complete(play_with_props())
