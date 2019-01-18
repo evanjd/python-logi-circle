@@ -25,9 +25,9 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 - Subscribe to WebSocket API to handle camera property updates and activities pushed from API
 - Read camera properties (see "play with props" example)
 
-## Features planned
+## To do
 
-- Update Home Assistant integration to support v0.2.x version of this library (dependent on Logitech's public release of their API)
+- ~Update Home Assistant integration to support v0.2.x version of this library.~ PR has been raised.
 
 ## Usage example
 
