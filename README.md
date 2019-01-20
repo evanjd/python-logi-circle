@@ -28,6 +28,7 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 ## To do
 
 - ~Update Home Assistant integration to support v0.2.x version of this library.~ PR has been raised.
+- Publish documentation on readthedocs.
 
 ## Usage example
 
