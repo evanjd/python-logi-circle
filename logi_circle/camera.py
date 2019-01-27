@@ -13,9 +13,12 @@ from .const import (ACCESSORIES_ENDPOINT,
                     ACTIVITY_API_LIMIT,
                     GEN_1_MODEL,
                     GEN_2_MODEL,
+                    GEN_1_MODEL_NAME,
+                    GEN_2_MODEL_NAME,
                     GEN_1_MOUNT,
                     GEN_2_MOUNT_WIRE,
                     GEN_2_MOUNT_WIREFREE,
+                    MODEL_UNKNOWN,
                     MOUNT_UNKNOWN)
 from .live_stream import LiveStream
 from .activity import Activity
@@ -249,6 +252,15 @@ class Camera():
     def model(self):
         """Return model number."""
         return self._attrs.get('model')
+
+    @property
+    def model_name(self):
+        """Return model name."""
+        if self.model == GEN_1_MODEL:
+            return GEN_1_MODEL_NAME
+        if self.model == GEN_2_MODEL:
+            return '%s (%s)' % (GEN_2_MODEL_NAME, self.mount)
+        return MODEL_UNKNOWN
 
     @property
     def mount(self):

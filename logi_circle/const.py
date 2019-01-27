@@ -47,9 +47,12 @@ ISO8601_FORMAT_MASK = '%Y-%m-%dT%H:%M:%SZ'
 ACTIVITY_API_LIMIT = 100
 GEN_1_MODEL = "A1533"
 GEN_2_MODEL = "V-R0008"
+GEN_1_MODEL_NAME = "Logi Circle"
+GEN_2_MODEL_NAME = "Logi Circle 2"
 GEN_1_MOUNT = "Charging Ring"
 GEN_2_MOUNT_WIRE = "Wired"
 GEN_2_MOUNT_WIREFREE = "Wire-free"  # Battery powered
+MODEL_UNKNOWN = "Unknown Logi Circle generation"
 MOUNT_UNKNOWN = "Unknown"
 ACTIVITY_EVENTS = ["activity_created",
                    "activity_updated",
@@ -74,7 +77,7 @@ PROP_MAP = {
     "pir_wake_up": {"key": "pirWakeUp", "config": True, "default_value": False},
     "speaker": {"key": "speakerOn", "config": True, "default_value": False},
     "speaker_volume": {"key": "speakerVolume", "config": True},
-    "led": {"key":  "ledEnabled", "config": True, "default_value": False},
+    "led": {"key":  "ledEnabled", "config": True, "default_value": False, "settable": True},
     "recording_disabled": {"key": "privacyMode", "config": True, "default_value": False, "settable": True}
 }
 

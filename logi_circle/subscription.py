@@ -2,6 +2,7 @@
 # coding: utf-8
 # vim:sw=4:ts=4:et:
 import logging
+import asyncio
 import json
 import aiohttp
 from .const import ACTIVITY_EVENTS, ACCESSORIES_ENDPOINT, ACTIVITIES_ENDPOINT
@@ -15,10 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 class Subscription():
     """Generic implementation for a Logi Circle event subscription."""
 
-    def __init__(self, wss_url, cameras, raw=False):
+    def __init__(self, wss_url, cameras, ping_interval=60, raw=False):
         """Initialize Subscription object"""
         self.wss_url = wss_url
         self._cameras = cameras
+        self._ping_interval = ping_interval
         self._ws = None
         self._session = None
         self._raw = raw
@@ -34,6 +36,9 @@ class Subscription():
             self.wss_url)
         _LOGGER.debug("Opened WS connection to url %s", self.wss_url)
 
+        if self._ping_interval > 0:
+            asyncio.ensure_future(self._auto_ping(self._ping_interval))
+
     async def close(self):
         """Close WebSockets connection"""
         if not self.opened:
@@ -47,6 +52,14 @@ class Subscription():
         if isinstance(self._session, aiohttp.ClientSession):
             await self._session.close()
             self._session = None
+
+    async def ping(self):
+        """Send a ping frame"""
+        if not self.opened or self._ws is None:
+            return
+
+        _LOGGER.debug("WS: Sending ping frame")
+        await self._ws.ping()
 
     async def get_next_event(self):
         """Wait for next WS frame"""
@@ -100,6 +113,12 @@ class Subscription():
 
         if event_type == 'activity_finished' and camera._current_activity:
             camera._current_activity = None
+
+    async def _auto_ping(self, interval):
+        """Send ping frames at the specified interval"""
+        while self.opened:
+            await asyncio.sleep(interval)
+            await self.ping()
 
     def _handle_event(self, data):
         """Perform action with event"""

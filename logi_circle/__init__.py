@@ -90,7 +90,7 @@ class LogiCircle():
         self._cameras = cameras
         return cameras
 
-    async def subscribe(self, event_types, cameras=None):
+    async def subscribe(self, event_types, cameras=None, ping_interval=60):
         """Subscribe camera(s) to one or more event types"""
 
         if not cameras:
@@ -111,7 +111,9 @@ class LogiCircle():
         wss_url = wss_url_request.headers['X-Logi-Websocket-Url']
         wss_url_request.close()
 
-        subscription = Subscription(wss_url=wss_url, cameras=cameras)
+        subscription = Subscription(wss_url=wss_url,
+                                    cameras=cameras,
+                                    ping_interval=ping_interval)
         self._subscriptions.append(subscription)
         return subscription
 
