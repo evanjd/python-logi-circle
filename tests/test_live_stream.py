@@ -127,7 +127,8 @@ class TestLiveStream(TestCamera):
             with patch('subprocess.check_call') as mock_subprocess:
                 self.logi.ffmpeg_path = TEST_FFMPEG_BIN
                 await self.test_camera.live_stream.download_rtsp(duration=TEST_DURATION,
-                                                                 filename=TEST_FILENAME)
+                                                                 filename=TEST_FILENAME,
+                                                                 blocking=True)
 
                 # Check ffmpeg bin is first argument
                 self.assertEqual(mock_subprocess.call_args[0][0][0], TEST_FFMPEG_BIN)
@@ -145,6 +146,7 @@ class TestLiveStream(TestCamera):
             self.logi.ffmpeg_path = None
             with self.assertRaises(RuntimeError):
                 await self.test_camera.live_stream.download_rtsp(duration=TEST_DURATION,
-                                                                 filename=TEST_FILENAME)
+                                                                 filename=TEST_FILENAME,
+                                                                 blocking=True)
 
         self.loop.run_until_complete(run_test())

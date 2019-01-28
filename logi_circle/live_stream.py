@@ -58,7 +58,8 @@ class LiveStream():
     async def download_rtsp(self,
                             duration,  # in seconds
                             filename,
-                            ffmpeg_bin=None):
+                            ffmpeg_bin=None,
+                            blocking=False):
         """Downloads the live stream into a specific file for a specific duration"""
 
         ffmpeg_bin = ffmpeg_bin or self.logi.ffmpeg_path
@@ -69,7 +70,8 @@ class LiveStream():
                 "This method requires ffmpeg to be installed and available from the current execution context.")
 
         rtsp_uri = await self.get_rtsp_url()
-        subprocess.check_call(
+        subprocess_method = getattr(subprocess, 'check_call' if blocking else 'Popen')
+        subprocess_method(
             [ffmpeg_bin, "-i", rtsp_uri, "-t", str(duration),
              "-vcodec", "copy", "-acodec", "copy", filename],
             stderr=subprocess.DEVNULL
