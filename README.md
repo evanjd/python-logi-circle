@@ -33,8 +33,6 @@ You must request API access from Logitech to use this library. Please refer to t
 
 #### Setup and authenticate:
 
-Requires API access from Logitech (not yet publicly available).
-
 ```python
 import asyncio
 from logi_circle import LogiCircle
