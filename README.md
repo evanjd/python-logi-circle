@@ -12,7 +12,7 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
 
-**The API this library wraps is not yet publicly available.** If you want something you can use today, check out the [v0.1 branch](https://github.com/evanjd/python-logi-circle/tree/v0.1.x). Please note that v0.1.x wraps Logitech's private API and won't be supported once the public API is released.
+You must request API access from Logitech to use this library. Please refer to the instructions [here](https://www.home-assistant.io/components/logi_circle/#requesting-api-access) for more information.
 
 ## Features implemented
 
@@ -27,7 +27,6 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 
 ## To do
 
-- ~Update Home Assistant integration to support v0.2.x version of this library.~ PR has been raised.
 - Publish documentation on readthedocs.
 
 ## Usage example
