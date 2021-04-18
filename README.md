@@ -4,15 +4,18 @@
 
 [![PyPI version](https://badge.fury.io/py/logi-circle.svg)](https://badge.fury.io/py/logi-circle)
 ![License](https://img.shields.io/packagist/l/doctrine/orm.svg)
-[![Build Status][travis-badge]][travis-url]
+[![Build Status][github-actions-badge]][github-actions-url]
 [![Coverage Status][coverage-badge]][coverage-url]
 [![Open Issues][open-issues-badge]][open-issues-url]
 
-This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects. The goal is to expose most of the functionality from Logi's 1st party applications, allowing integration of those features into other projects.
+This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects, wrapping Logi Circle's official API.
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
 
-Note that the API this project is based on is not open, and therefore could change/break at any time.
+There are two versions of this API:
+
+- `2.x` - which targets the public API ([`master` branch](https://github.com/evanjd/python-logi-circle/tree/master))
+- [`1.x`](https://github.com/evanjd/python-logi-circle/tree/private-api) - which targets the private API **(you are here)**
 
 ## Installation
 
@@ -281,7 +284,7 @@ They're very welcome, every little bit helps! I'm especially keen for help suppo
 
 [open-issues-badge]: https://img.shields.io/github/issues/evanjd/python-logi-circle.svg
 [open-issues-url]: https://github.com/evanjd/python-logi-circle/issues
-[travis-badge]: https://travis-ci.com/evanjd/python-logi-circle.svg?branch=master
-[travis-url]: https://travis-ci.com/evanjd/python-logi-circle
+[github-actions-badge]: https://github.com/evanjd/python-logi-circle/actions/workflows/python-package.yml/badge.svg
+[github-actions-url]: https://github.com/evanjd/python-logi-circle/actions/workflows/python-package.yml
 [coverage-badge]: https://img.shields.io/coveralls/github/evanjd/python-logi-circle/master.svg
 [coverage-url]: https://coveralls.io/github/evanjd/python-logi-circle?branch=master
