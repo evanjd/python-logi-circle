@@ -12,7 +12,14 @@ This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/ci
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
 
-You must request API access from Logitech to use this library. Please refer to the instructions [here](https://www.home-assistant.io/components/logi_circle/#requesting-api-access) for more information.
+There are two versions of this API:
+
+- `2.x` - which targets the public API **(you are here)**
+- [`1.x`](https://github.com/evanjd/python-logi-circle/tree/private-api) - which targets the private API ([`private-api` branch](https://github.com/evanjd/python-logi-circle/tree/private-api))
+
+To access the public API, you must request access from Logitech. Unfortunately, it's become increasingly difficult to get API keys issued by Logitech. Initially, API key requests were turned around in a few business days. Now, the wait time is several months.
+
+If you still want to request access, please refer to the instructions [here](https://www.home-assistant.io/components/logi_circle/#requesting-api-access) for more information. Otherwise, please refer to the [`private-api` branch](https://github.com/evanjd/python-logi-circle/tree/private-api).
 
 ## Features implemented
 
@@ -24,10 +31,6 @@ You must request API access from Logitech to use this library. Please refer to t
 - On-demand polling from server to update camera properties
 - Subscribe to WebSocket API to handle camera property updates and activities pushed from API
 - Read camera properties (see "play with props" example)
-
-## To do
-
-- Publish documentation on readthedocs.
 
 ## Usage example
 
