@@ -5,7 +5,7 @@ import os
 
 # Requests and cached session properties
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+    'User-Agent': 'iOSClient/3.4.5.31',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
     'Connection': 'keep-alive',
