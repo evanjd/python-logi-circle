@@ -22,7 +22,7 @@ There are two versions of this API:
 #### Installing release version
 
 ```bash
-$ pip install logi-circle
+$ pip install -Iv logi-circle==0.1.8
 ```
 
 #### Installing development master
