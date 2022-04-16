@@ -5,7 +5,7 @@ import os
 
 # Requests and cached session properties
 HEADERS = {
-    'User-Agent': 'iOSClient/3.4.5.31',
+    'User-Agent': 'iOSClient/3.5.1',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
     'Connection': 'keep-alive',
