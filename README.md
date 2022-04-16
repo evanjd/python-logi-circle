@@ -22,7 +22,7 @@ There are two versions of this API:
 #### Installing release version
 
 ```bash
-$ pip install -Iv logi-circle==0.1.8
+$ pip install -Iv logi-circle==0.1.9
 ```
 
 #### Installing development master
@@ -256,6 +256,10 @@ loop.close()
   - Added `battery_saving` property and `set_battery_saving_mode` method
 - 0.1.7
   - Implemented rudimentary throttling on `update()` requests
+- 0.1.8
+  - Bump user-agent
+- 0.1.9
+  - Bump user-agent
 
 ## Meta
 

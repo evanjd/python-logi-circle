@@ -10,7 +10,7 @@ def readme():
 setup(
     name='logi_circle',
     packages=['logi_circle'],
-    version='0.1.8',
+    version='0.1.9',
     description='A Python library to communicate with Logi Circle cameras',
     long_description=readme(),
     long_description_content_type='text/markdown',
