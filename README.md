@@ -72,12 +72,6 @@ $ pip install \
   - Duration
   - Relevance level (indicating whether people/objects were detected)
 
-## Features planned
-
-- Motion alerts (eventually)
-- Logi Circle CLI (eventually)
-- Speaker support (maybe)
-
 ## Usage example
 
 #### Setup and authenticate:
