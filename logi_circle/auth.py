@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 import aiohttp
 
 from .const import AUTH_BASE, AUTH_ENDPOINT, TOKEN_ENDPOINT
-from .exception import AuthorizationFailed, NotAuthorized
+from .exception import AuthorizationFailed, NotAuthorized, SessionInvalidated
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class AuthProvider():
         self.cache_file = cache_file
         self.logi = logi_base
         self.tokens = self._read_token()
+        self.invalid = False
         self.session = None
 
     @property
@@ -101,21 +102,37 @@ class AuthProvider():
 
     async def _authenticate(self, payload):
         """Request or refresh the access token with Logi Circle"""
+        if self.invalid:
+            raise SessionInvalidated('Logi API session invalidated due to 4xx exception refreshing token')
 
         session = await self.get_session()
         async with session.post(AUTH_BASE + TOKEN_ENDPOINT, data=payload) as req:
-            response = await req.json()
+            try:
+                response = await req.json()
 
-            if req.status >= 400:
+                if req.status >= 400:
+                    self.logi.is_connected = False
+                    if req.status >= 400 and req.status < 500:
+                        self.invalid = True
+
+                    error_message = response.get(
+                        "error_description", "Non-OK code %s returned" % (req.status))
+                    raise AuthorizationFailed(error_message)
+
+                # Authorization succeeded. Persist the refresh and access tokens.
+                self.logi.is_connected = True
+                self.tokens[self.client_id] = response
+                self._save_token()
+            except aiohttp.ContentTypeError:
+                response = await req.text()
                 self.logi.is_connected = False
-                error_message = response.get(
-                    "error_description", "Non-OK code %s returned" % (req.status))
-                raise AuthorizationFailed(error_message)
+                if req.status >= 400 and req.status < 500:
+                    self.invalid = True
 
-            # Authorization succeeded. Persist the refresh and access tokens.
-            self.logi.is_connected = True
-            self.tokens[self.client_id] = response
-            self._save_token()
+                if req.status >= 400:
+                    raise AuthorizationFailed("Non-OK code %s returned: %s" % (req.status, response))
+                else:
+                    raise AuthorizationFailed("Unexpected content type from Logi API: %s" % (response))
 
     async def get_session(self):
         """Returns a aiohttp session, creating one if it doesn't already exist."""

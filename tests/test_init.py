@@ -6,7 +6,7 @@ import aiohttp
 from tests.test_base import LogiUnitTestBase
 from logi_circle import LogiCircle
 from logi_circle.const import AUTH_HOST, TOKEN_ENDPOINT, API_HOST, ACCESSORIES_ENDPOINT, DEFAULT_FFMPEG_BIN
-from logi_circle.exception import NotAuthorized, AuthorizationFailed
+from logi_circle.exception import NotAuthorized, AuthorizationFailed, SessionInvalidated
 
 
 class TestAuth(LogiUnitTestBase):
@@ -98,6 +98,26 @@ class TestAuth(LogiUnitTestBase):
                           aresponses.Response(status=401))
 
                 with self.assertRaises(AuthorizationFailed):
+                    await logi._fetch(url='/api')
+
+        self.loop.run_until_complete(run_test())
+        
+    def test_fetch_guard_invalid_session(self):
+        """Fetch should bail out if session was invalidated"""
+        logi = self.logi
+        logi.auth_provider = self.get_authorized_auth_provider()
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(API_HOST, '/api', 'get',
+                          aresponses.Response(status=401))
+                arsps.add(AUTH_HOST, TOKEN_ENDPOINT, 'post',
+                          aresponses.Response(status=429,
+                                              text='too many requests'))
+
+                with self.assertRaises(AuthorizationFailed):
+                    await logi._fetch(url='/api')
+                with self.assertRaises(SessionInvalidated):
                     await logi._fetch(url='/api')
 
         self.loop.run_until_complete(run_test())

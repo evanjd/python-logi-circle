@@ -5,7 +5,7 @@ from urllib.parse import urlparse, parse_qs
 import aresponses
 from tests.test_base import LogiUnitTestBase
 from logi_circle.const import AUTH_HOST, TOKEN_ENDPOINT, DEFAULT_SCOPES
-from logi_circle.exception import NotAuthorized, AuthorizationFailed
+from logi_circle.exception import NotAuthorized, AuthorizationFailed, SessionInvalidated
 
 
 class TestAuth(LogiUnitTestBase):
@@ -95,6 +95,27 @@ class TestAuth(LogiUnitTestBase):
 
                 # Mock authorization, and verify AuthProvider state
                 with self.assertRaises(AuthorizationFailed):
+                    await logi.authorize('letmein')
+
+        self.loop.run_until_complete(run_test())
+
+    def test_session_invalidation(self):
+        """Test session invalidation."""
+        logi = self.logi
+
+        async def run_test():
+            async with aresponses.ResponsesMockServer(loop=self.loop) as arsps:
+                arsps.add(AUTH_HOST, TOKEN_ENDPOINT, 'post',
+                          aresponses.Response(status=401,
+                                              text=self.fixtures['failed_authorization'],
+                                              headers={'content-type': 'application/json'}))
+
+                # Mock authorization, and verify AuthProvider state
+                with self.assertRaises(AuthorizationFailed):
+                    await logi.authorize('letmein')
+
+                # Attempt authorisation again
+                with self.assertRaises(SessionInvalidated):
                     await logi.authorize('letmein')
 
         self.loop.run_until_complete(run_test())
