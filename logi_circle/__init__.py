@@ -14,7 +14,7 @@ from .const import (DEFAULT_SCOPES,
 from .auth import AuthProvider
 from .camera import Camera
 from .subscription import Subscription
-from .exception import NotAuthorized, AuthorizationFailed
+from .exception import NotAuthorized, AuthorizationFailed, SessionInvalidated
 from .utils import _get_ids_for_cameras
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,6 +122,14 @@ class LogiCircle():
         """Returns all WS subscriptions."""
         return self._subscriptions
 
+    def _check_readiness(self):
+        """Checks that this library is ready to submit requests to the Logi Circle API"""
+        if not self.auth_provider.authorized:
+            raise NotAuthorized('No access token available for this client ID')
+
+        if self.auth_provider.invalid:
+            raise SessionInvalidated('Logi API session invalidated due to 4xx exception refreshing token')
+
     async def _fetch(self,
                      url,
                      method='GET',
@@ -134,8 +142,7 @@ class LogiCircle():
         """Query data from the Logi Circle API."""
         # pylint: disable=too-many-locals
 
-        if not self.auth_provider.authorized:
-            raise NotAuthorized('No access token available for this client ID')
+        self._check_readiness()
 
         base_headers = {
             'X-API-Key': self.api_key,
