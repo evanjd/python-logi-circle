@@ -8,6 +8,8 @@
 [![Coverage Status][coverage-badge]][coverage-url]
 [![Open Issues][open-issues-badge]][open-issues-url]
 
+:warning: **This no longer functions due to a breaking change in Logitech's private API** (https://github.com/evanjd/python-logi-circle/issues/15)**. Contributions to fix this issue are welcome.** :warning:
+
 This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects, wrapping Logi Circle's official API.
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
