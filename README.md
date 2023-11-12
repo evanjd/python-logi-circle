@@ -1,6 +1,6 @@
 # Python Logi Circle API
 
-> Python 3.6+ API for interacting with Logi Circle cameras, written with asyncio and aiohttp.
+> Python 3.7+ API for interacting with Logi Circle cameras, written with asyncio and aiohttp.
 
 [![PyPI version](https://badge.fury.io/py/logi-circle.svg)](https://badge.fury.io/py/logi-circle)
 ![License](https://img.shields.io/packagist/l/doctrine/orm.svg)
