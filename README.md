@@ -8,6 +8,8 @@
 [![Coverage Status][coverage-badge]][coverage-url]
 [![Open Issues][open-issues-badge]][open-issues-url]
 
+:warning: **This library is in maintenance mode. Logitech has ceased all support for individual users of the API and no longer issues API keys.** :warning:
+
 This library exposes the [Logi Circle](https://www.logitech.com/en-us/product/circle-2-home-security-camera) family of cameras as Python objects, wrapping Logi Circle's official API.
 
 [Now available as a Home Assistant integration!](https://www.home-assistant.io/components/logi_circle/) :tada:
@@ -16,10 +18,6 @@ There are two versions of this API:
 
 - `2.x` - which targets the public API **(you are here)**
 - [`1.x`](https://github.com/evanjd/python-logi-circle/tree/private-api) - which targets the private API ([`private-api` branch](https://github.com/evanjd/python-logi-circle/tree/private-api))
-
-To access the public API, you must request access from Logitech. Unfortunately, it's become increasingly difficult to get API keys issued by Logitech. Initially, API key requests were turned around in a few business days. Now, the wait time is several months.
-
-If you still want to request access, please refer to the instructions [here](https://www.home-assistant.io/components/logi_circle/#requesting-api-access) for more information. Otherwise, please refer to the [`private-api` branch](https://github.com/evanjd/python-logi-circle/tree/private-api).
 
 ## Features implemented
 
