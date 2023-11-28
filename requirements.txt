@@ -1,3 +1,3 @@
 pytz
-aiohttp==3.8.6
+aiohttp==3.9.0
 python-slugify==1.2.6
